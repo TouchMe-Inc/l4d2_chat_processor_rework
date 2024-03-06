@@ -1,9 +1,10 @@
 #pragma semicolon              1
 #pragma newdecls               required
 
+#include <sourcemod>
 
-public Plugin myinfo =
-{
+
+public Plugin myinfo = {
 	name = "ChatProcessorRework",
 	author = "Simple Plugins, Mini, TouchMe",
 	description = "Process chat and allows other plugins to manipulate chat",
@@ -13,17 +14,26 @@ public Plugin myinfo =
 
 
 #define SENDER_WORLD           0
+
+/*
+ * String size.
+ */
 #define MAXLENGTH_INPUT        128 // Inclues \0 and is the size of the chat input box.
 #define MAXLENGTH_NAME         64  // This is backwords math to get compability.  Sourcemod has it set at 32, but there is room for more.
 #define MAXLENGTH_MESSAGE      256 // This is based upon the SDK and the length of the entire message, including tags, name, : etc.
 
+/*
+ * Chat flags.
+ */
 #define CHATFLAGS_INVALID      0
 #define CHATFLAGS_ALL          (1 << 0)
 #define CHATFLAGS_TEAM         (1 << 1)
 #define CHATFLAGS_SPEC         (1 << 2)
 #define CHATFLAGS_DEAD         (1 << 3)
 
-// Other
+/*
+ * Other.
+ */
 #define TRANSLATIONS            "chat_processor_rework.phrases"
 
 
@@ -50,10 +60,10 @@ public APLRes AskPluginLoad2(Handle myself, bool bLate, char[] sErr, int iErrLen
 		return APLRes_SilentFailure;
 	}
 
-	RegPluginLibrary("chat_processor_rework");
-
 	g_fwdOnChatMessage = CreateGlobalForward("OnChatMessage", ET_Hook, Param_CellByRef, Param_Cell, Param_String, Param_String, Param_Cell);
 	g_fwdOnChatMessagePost = CreateGlobalForward("OnChatMessage_Post", ET_Ignore, Param_Cell, Param_Cell, Param_String, Param_String, Param_Cell);
+
+	RegPluginLibrary("chat_processor_rework");
 
 	return APLRes_Success;
 }
@@ -63,6 +73,7 @@ public void OnPluginStart()
 	g_hChatFormats = CreateTrie();
 
 	UserMsg umSayText2 = GetUserMessageId("SayText2");
+
 	if (umSayText2 != INVALID_MESSAGE_ID)
 	{
 		char sTranslationLocation[PLATFORM_MAX_PATH];
@@ -184,7 +195,7 @@ public Action OnSayText2(UserMsg msg_id, Handle bf, const int[] iPlayers, int iT
 	 * This is the check for a name change. If it has not changed we add the team color code.
 	 */
 	if (StrEqual(sOriginalName, sSenderName)) {
-		Format(sSenderName, sizeof(sSenderName), "\x03%s", sSenderName);
+		FormatEx(sSenderName, sizeof(sSenderName), "\x03%s", sSenderName);
 	}
 
 	/**
@@ -257,7 +268,7 @@ public void SayText2Post(Handle hPack)
 	ReadPackString(hPack, sMessage, sizeof(sMessage));
 
 	char sTranslation[MAXLENGTH_MESSAGE];
-	Format(sTranslation, sizeof(sTranslation), "%t", sChatType, sSenderName, sMessage);
+	FormatEx(sTranslation, sizeof(sTranslation), "%t", sChatType, sSenderName, sMessage);
 
 	{
 		Handle bf = StartMessage("SayText2", iPlayers, iTotalPlayersPost, USERMSG_RELIABLE | USERMSG_BLOCKHOOKS);
