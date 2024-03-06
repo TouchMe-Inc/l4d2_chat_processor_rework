@@ -44,9 +44,7 @@ GlobalForward g_fwdOnChatMessagePost = null;
  */
 public APLRes AskPluginLoad2(Handle myself, bool bLate, char[] sErr, int iErrLen)
 {
-	EngineVersion engine = GetEngineVersion();
-
-	if (engine != Engine_Left4Dead2)
+	if (GetEngineVersion() != Engine_Left4Dead2)
 	{
 		strcopy(sErr, iErrLen, "Plugin only supports Left 4 Dead 2");
 		return APLRes_SilentFailure;
@@ -78,13 +76,6 @@ public void OnPluginStart()
 
 		HookUserMessage(umSayText2, OnSayText2, true);
 	}
-}
-
-public void OnPluginEnd()
-{
-	CloseHandle(g_hChatFormats);
-	CloseHandle(g_fwdOnChatMessage);
-	CloseHandle(g_fwdOnChatMessagePost);
 }
 
 public Action OnSayText2(UserMsg msg_id, Handle bf, const int[] iPlayers, int iTotalPlayers, bool reliable, bool init)
@@ -339,8 +330,8 @@ int GetChatFlags(const char[] sTranslationName)
 	}
 
 	if (StrContains(sTranslationName, "team", false) != -1
-	|| 	StrContains(sTranslationName, "survivor", false) != -1
-	||	StrContains(sTranslationName, "infected", false) != -1) {
+	|| StrContains(sTranslationName, "survivor", false) != -1
+	|| StrContains(sTranslationName, "infected", false) != -1) {
 		iFlags = iFlags | CHATFLAGS_TEAM;
 	}
 
