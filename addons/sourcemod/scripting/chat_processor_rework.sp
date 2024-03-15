@@ -195,7 +195,7 @@ public Action OnSayText2(UserMsg msg_id, Handle bf, const int[] iPlayers, int iT
 	 * This is the check for a name change. If it has not changed we add the team color code.
 	 */
 	if (StrEqual(sOriginalName, sSenderName)) {
-		FormatEx(sSenderName, sizeof(sSenderName), "\x03%s", sSenderName);
+		Format(sSenderName, sizeof(sSenderName), "\x03%s", sSenderName);
 	}
 
 	/**
@@ -268,7 +268,7 @@ public void SayText2Post(Handle hPack)
 	ReadPackString(hPack, sMessage, sizeof(sMessage));
 
 	char sTranslation[MAXLENGTH_MESSAGE];
-	FormatEx(sTranslation, sizeof(sTranslation), "%t", sChatType, sSenderName, sMessage);
+	Format(sTranslation, sizeof(sTranslation), "%t", sChatType, sSenderName, sMessage);
 
 	{
 		Handle bf = StartMessage("SayText2", iPlayers, iTotalPlayersPost, USERMSG_RELIABLE | USERMSG_BLOCKHOOKS);
