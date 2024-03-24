@@ -147,7 +147,7 @@ void ShowPlayerMenu(int iClient)
 
 		AddMenuItem(hMenu, sTarget, sName);
 	}
-	
+
 	DisplayMenu(hMenu, iClient, MENU_TIME_FOREVER);
 }
 
