@@ -4,11 +4,9 @@
 #include <sourcemod>
 #include <sdktools>
 #include <chat_processor_rework>
-#include <colors>
 
 
-public Plugin myinfo =
-{
+public Plugin myinfo = {
 	name = "LocalMute",
 	author = "TouchMe",
 	description = "Allows a player to locally mute another player's text and voice chat",
@@ -64,10 +62,6 @@ public void OnClientDisconnect(int iClient)
 
 public Action OnChatMessage(int& iAuthor, Handle hRecipients, char[] sName, char[] sMessage, int iFlags)
 {
-	if (!iAuthor) {
-		return Plugin_Continue;
-	}
-
 	int iResepient = 0;
 	int iClient = 0;
 	bool bChanged = false;
@@ -132,9 +126,9 @@ void ShowPlayerMenu(int iClient)
 {
 	Menu hMenu = CreateMenu(HandlerPlayerMenu, MenuAction_Select|MenuAction_End);
 
-	SetMenuTitle(hMenu, "%T", "MENU_PLAYER_TITLE", iClient); // "Select a player for local mute"
+	SetMenuTitle(hMenu, "%T", "MENU_PLAYER_TITLE", iClient);
 
-	char sTarget[4], sName[32];
+	char sTarget[4], sName[MAX_NAME_LENGTH];
 
 	for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
 	{
@@ -147,7 +141,7 @@ void ShowPlayerMenu(int iClient)
 
 		AddMenuItem(hMenu, sTarget, sName);
 	}
-
+	
 	DisplayMenu(hMenu, iClient, MENU_TIME_FOREVER);
 }
 
@@ -183,7 +177,7 @@ void ShowIgnoreMenu(int iClient, int iTarget)
 
 	Menu hMenu = CreateMenu(HandlerIgnoreMenu, MenuAction_Select|MenuAction_End);
 
-	char sName[32]; GetClientNameFixed(iTarget, sName, sizeof(sName), 25);
+	char sName[MAX_NAME_LENGTH]; GetClientNameFixed(iTarget, sName, sizeof(sName), 25);
 
 	SetMenuTitle(hMenu, "%T", "MENU_IGONORE_TITLE", iClient, sName);
 
