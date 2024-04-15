@@ -4,6 +4,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <chat_processor_rework>
+#include <colors>
 
 
 public Plugin myinfo = {
