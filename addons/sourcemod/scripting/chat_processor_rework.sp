@@ -90,14 +90,6 @@ Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
 		return Plugin_Continue;
 	}
 
-	/*
-	 * Get the senders name.
-	 */
-	char sSenderName[MAXLENGTH_NAME];
-	GetClientName(iSender, sSenderName, sizeof(sSenderName));
-	CRemoveTags(sSenderName, sizeof(sSenderName));
-	StripQuotes(sSenderName);
-
 	/**
 	 * Get the message.
 	 */
@@ -107,6 +99,17 @@ Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
 	TrimString(sMessage);
 	StripQuotes(sMessage);
 
+	if (sMessage[0] == '/') {
+		return Plugin_Handled;
+	}
+
+	/*
+	 * Get the senders name.
+	 */
+	char sSenderName[MAXLENGTH_NAME];
+	GetClientName(iSender, sSenderName, sizeof(sSenderName));
+	CRemoveTags(sSenderName, sizeof(sSenderName));
+	StripQuotes(sSenderName);
 
 	int iTeam = GetClientTeam(iSender);
 
@@ -134,6 +137,7 @@ Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
 	 * Store the clients in an array so the call can manipulate it.
 	 */
 	Handle hRecipients = CreateArray();
+
 	for (int iRecipient = 1; iRecipient <= MaxClients; iRecipient ++)
 	{
 		if (!IsClientInGame(iRecipient)) {
@@ -146,7 +150,7 @@ Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
 			continue;
 		}
 
-		if (iFlags | CHATFLAGS_TEAM && GetClientTeam(iRecipient) != iTeam) {
+		if (iFlags & CHATFLAGS_TEAM && GetClientTeam(iRecipient) != iTeam) {
 			continue;
 		}
 
