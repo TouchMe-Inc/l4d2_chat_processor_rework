@@ -9,7 +9,7 @@ public Plugin myinfo = {
 	name = "ChatProcessorRework",
 	author = "Simple Plugins, Mini, TouchMe",
 	description = "Process chat and allows other plugins to manipulate chat",
-	version = "build0001",
+	version = "build_0002",
 	url = "https://github.com/TouchMe-Inc/l4d2_chat_processor_rework"
 };
 
@@ -86,7 +86,7 @@ public void OnPluginStart()
 
 Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
 {
-	if (iSender == SENDER_WORLD) {
+	if (iSender == SENDER_WORLD || !IsClientConnected(iSender)) {
 		return Plugin_Continue;
 	}
 
