@@ -40,7 +40,7 @@ public APLRes AskPluginLoad2(Handle myself, bool bLate, char[] sErr, int iErrLen
 
 public Action OnChatMessage(int& iAuthor, Handle hRecipients, char[] sName, char[] sMessage, int iFlags)
 {
-	if (IsClientSpectator(iAuthor) || ~iFlags & CHATFLAGS_TEAM) {
+	if (iFlags & CHATFLAGS_SPECTATOR || ~iFlags & CHATFLAGS_TEAM) {
 		return Plugin_Continue;
 	}
 
