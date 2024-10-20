@@ -6,11 +6,11 @@
 
 
 public Plugin myinfo = {
-	name = "ChatProcessorRework",
-	author = "Simple Plugins, Mini, TouchMe",
+	name        = "ChatProcessorRework",
+	author      = "Simple Plugins, Mini, TouchMe",
 	description = "Process chat and allows other plugins to manipulate chat",
-	version = "build_0002",
-	url = "https://github.com/TouchMe-Inc/l4d2_chat_processor_rework"
+	version     = "build_0002",
+	url         = "https://github.com/TouchMe-Inc/l4d2_chat_processor_rework"
 };
 
 
@@ -68,7 +68,7 @@ public APLRes AskPluginLoad2(Handle myself, bool bLate, char[] sErr, int iErrLen
 		return APLRes_SilentFailure;
 	}
 
-	g_fwdOnChatMessage = CreateGlobalForward("OnChatMessage", ET_Hook, Param_CellByRef, Param_Cell, Param_String, Param_String, Param_Cell);
+	g_fwdOnChatMessage = CreateGlobalForward("OnChatMessage", ET_Hook, Param_Cell, Param_Cell, Param_String, Param_String, Param_Cell);
 	g_fwdOnChatMessagePost = CreateGlobalForward("OnChatMessage_Post", ET_Ignore, Param_Cell, Param_Cell, Param_String, Param_String, Param_Cell);
 
 	RegPluginLibrary("chat_processor_rework");
@@ -166,13 +166,18 @@ Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
 	char sOriginalName[MAXLENGTH_NAME];
 	strcopy(sOriginalName, sizeof(sOriginalName), sSenderName);
 
+	char sOriginalMessage[MAXLENGTH_MESSAGE];
+	strcopy(sOriginalMessage, sizeof(sOriginalMessage), sMessage);
+
+	Handle hOriginalRecipients = CloneArray(hRecipients);
+
 	/*
 	 * Start the forward for other plugins.
 	 */
 	Action fResult = Plugin_Continue;
 
 	Call_StartForward(g_fwdOnChatMessage);
-	Call_PushCellRef(iSender);
+	Call_PushCell(iSender);
 	Call_PushCell(hRecipients);
 	Call_PushStringEx(sSenderName, sizeof(sSenderName), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 	Call_PushStringEx(sMessage, sizeof(sMessage), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
@@ -184,18 +189,24 @@ Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
 	{
 		ThrowNativeError(fError, "Forward OnChatMessage failed");
 		CloseHandle(hRecipients);
+		CloseHandle(hOriginalRecipients);
 		return Plugin_Continue;
 	}
 
 	else if (fResult == Plugin_Continue)
 	{
 		CloseHandle(hRecipients);
-		return Plugin_Continue;
+		hRecipients = CloneArray(hOriginalRecipients);
+		CloseHandle(hOriginalRecipients);
+
+		strcopy(sSenderName, sizeof(sSenderName), sOriginalName);
+		strcopy(sMessage, sizeof(sMessage), sOriginalMessage);
 	}
 
 	else if (fResult == Plugin_Stop)
 	{
 		CloseHandle(hRecipients);
+		CloseHandle(hOriginalRecipients);
 		return Plugin_Handled;
 	}
 
@@ -249,6 +260,12 @@ void Frame_SendClientMessage(Handle hPack)
 
 	CloseHandle(hPack);
 
+	int iRecipients = GetArraySize(hRecipients);
+
+	if (!iRecipients) {
+		return;
+	}
+
 	char sChatType[64];
 
 	if (iFlags & CHATFLAGS_TEAM)
@@ -272,8 +289,6 @@ void Frame_SendClientMessage(Handle hPack)
 			strcopy(sChatType, sizeof(sChatType), "L4D_Chat_All");
 		}
 	}
-
-	int iRecipients = GetArraySize(hRecipients);
 
 	for (int iRecipient = 0; iRecipient < iRecipients; iRecipient ++)
 	{

@@ -38,7 +38,7 @@ public APLRes AskPluginLoad2(Handle myself, bool bLate, char[] sErr, int iErrLen
 	return APLRes_Success;
 }
 
-public Action OnChatMessage(int& iAuthor, Handle hRecipients, char[] sName, char[] sMessage, int iFlags)
+public Action OnChatMessage(int iAuthor, Handle hRecipients, char[] sName, char[] sMessage, int iFlags)
 {
 	if (iFlags & CHATFLAGS_SPECTATOR || ~iFlags & CHATFLAGS_TEAM) {
 		return Plugin_Continue;

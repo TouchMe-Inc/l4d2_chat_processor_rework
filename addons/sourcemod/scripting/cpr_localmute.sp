@@ -8,11 +8,11 @@
 
 
 public Plugin myinfo = {
-	name = "LocalMute",
-	author = "TouchMe",
+	name        = "LocalMute",
+	author      = "TouchMe",
 	description = "Allows a player to locally mute another player's text and voice chat",
-	version = "build0000",
-	url = "https://github.com/TouchMe-Inc/l4d2_chat_processor_rework"
+	version     = "build0000",
+	url         = "https://github.com/TouchMe-Inc/l4d2_chat_processor_rework"
 };
 
 
@@ -61,7 +61,7 @@ public void OnClientDisconnect(int iClient)
 	}
 }
 
-public Action OnChatMessage(int& iAuthor, Handle hRecipients, char[] sName, char[] sMessage, int iFlags)
+public Action OnChatMessage(int iAuthor, Handle hRecipients, char[] sName, char[] sMessage, int iFlags)
 {
 	int iResepient = 0;
 	int iClient = 0;
