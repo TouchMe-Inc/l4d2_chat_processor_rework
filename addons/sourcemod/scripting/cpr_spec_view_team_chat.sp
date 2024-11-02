@@ -7,11 +7,11 @@
 
 
 public Plugin myinfo = {
-	name = "SpecViewTeamChat",
-	author = "TouchMe",
-	description = "Allows an observer to see players team chat",
-	version = "build0000",
-	url = "https://github.com/TouchMe-Inc/l4d2_chat_processor_rework"
+    name        = "SpecViewTeamChat",
+    author      = "TouchMe",
+    description = "Allows an observer to see players team chat",
+    version     = "build0000",
+    url         = "https://github.com/TouchMe-Inc/l4d2_chat_processor_rework"
 };
 
 
@@ -29,42 +29,42 @@ public Plugin myinfo = {
  */
 public APLRes AskPluginLoad2(Handle myself, bool bLate, char[] sErr, int iErrLen)
 {
-	if (GetEngineVersion() != Engine_Left4Dead2)
-	{
-		strcopy(sErr, iErrLen, "Plugin only supports Left 4 Dead 2");
-		return APLRes_SilentFailure;
-	}
+    if (GetEngineVersion() != Engine_Left4Dead2)
+    {
+        strcopy(sErr, iErrLen, "Plugin only supports Left 4 Dead 2");
+        return APLRes_SilentFailure;
+    }
 
-	return APLRes_Success;
+    return APLRes_Success;
 }
 
-public Action OnChatMessage(int& iAuthor, Handle hRecipients, char[] sName, char[] sMessage, int iFlags)
+public Action OnChatMessage(int iAuthor, Handle hRecipients, char[] sName, char[] sMessage, int iFlags)
 {
-	if (iFlags & CHATFLAGS_SPECTATOR || ~iFlags & CHATFLAGS_TEAM) {
-		return Plugin_Continue;
-	}
+    if (iFlags & CHATFLAGS_SPECTATOR || ~iFlags & CHATFLAGS_TEAM) {
+        return Plugin_Continue;
+    }
 
-	bool bChanged = false;
+    bool bChanged = false;
 
-	for (int iClient = 1; iClient <= MaxClients; iClient ++)
-	{
-		if (!IsClientInGame(iClient)
-		|| !IsClientSpectator(iClient)
-		|| FindValueInArray(hRecipients, iClient) != -1) {
-			continue;
-		}
+    for (int iClient = 1; iClient <= MaxClients; iClient ++)
+    {
+        if (!IsClientInGame(iClient)
+        || !IsClientSpectator(iClient)
+        || FindValueInArray(hRecipients, iClient) != -1) {
+            continue;
+        }
 
-		PushArrayCell(hRecipients, iClient);
-		
-		bChanged = true;
-	}
+        PushArrayCell(hRecipients, iClient);
 
-	return bChanged ? Plugin_Changed : Plugin_Continue;
+        bChanged = true;
+    }
+
+    return bChanged ? Plugin_Changed : Plugin_Continue;
 }
 
 /**
  * Spectator team player?
  */
 bool IsClientSpectator(int iClient) {
-	return (GetClientTeam(iClient) == TEAM_SPECTATOR);
+    return (GetClientTeam(iClient) == TEAM_SPECTATOR);
 }

@@ -8,11 +8,11 @@
 
 
 public Plugin myinfo = {
-	name = "LocalMute",
-	author = "TouchMe",
-	description = "Allows a player to locally mute another player's text and voice chat",
-	version = "build0000",
-	url = "https://github.com/TouchMe-Inc/l4d2_chat_processor_rework"
+    name        = "LocalMute",
+    author      = "TouchMe",
+    description = "Allows a player to locally mute another player's text and voice chat",
+    version     = "build0000",
+    url         = "https://github.com/TouchMe-Inc/l4d2_chat_processor_rework"
 };
 
 
@@ -37,113 +37,113 @@ int g_hClientLocalMute[MAXPLAYERS + 1][MAXPLAYERS + 1];
  */
 public APLRes AskPluginLoad2(Handle myself, bool bLate, char[] sErr, int iErrLen)
 {
-	if (GetEngineVersion() != Engine_Left4Dead2)
-	{
-		strcopy(sErr, iErrLen, "Plugin only supports Left 4 Dead 2");
-		return APLRes_SilentFailure;
-	}
+    if (GetEngineVersion() != Engine_Left4Dead2)
+    {
+        strcopy(sErr, iErrLen, "Plugin only supports Left 4 Dead 2");
+        return APLRes_SilentFailure;
+    }
 
-	return APLRes_Success;
+    return APLRes_Success;
 }
 
 public void OnPluginStart()
 {
-	LoadTranslations(TRANSLATIONS);
+    LoadTranslations(TRANSLATIONS);
 
-	RegConsoleCmd("sm_localmute", Cmd_LocalMute);
+    RegConsoleCmd("sm_localmute", Cmd_LocalMute);
 }
 
 public void OnClientDisconnect(int iClient)
 {
-	for (int iAuthor = 1; iAuthor <= MaxClients; iAuthor++)
-	{
-		g_hClientLocalMute[iClient][iAuthor] = IGNORE_NONE;
-	}
+    for (int iAuthor = 1; iAuthor <= MaxClients; iAuthor++)
+    {
+        g_hClientLocalMute[iClient][iAuthor] = IGNORE_NONE;
+    }
 }
 
-public Action OnChatMessage(int& iAuthor, Handle hRecipients, char[] sName, char[] sMessage, int iFlags)
+public Action OnChatMessage(int iAuthor, Handle hRecipients, char[] sName, char[] sMessage, int iFlags)
 {
-	int iResepient = 0;
-	int iClient = 0;
-	bool bChanged = false;
+    int iResepient = 0;
+    int iClient = 0;
+    bool bChanged = false;
 
-	while (iResepient < GetArraySize(hRecipients))
-	{
-		iClient = GetArrayCell(hRecipients, iResepient);
+    while (iResepient < GetArraySize(hRecipients))
+    {
+        iClient = GetArrayCell(hRecipients, iResepient);
 
-		if (!IsValidClient(iClient))
-		{
-			iResepient ++;
-			continue;
-		}
+        if (!IsValidClient(iClient))
+        {
+            iResepient ++;
+            continue;
+        }
 
-		if (g_hClientLocalMute[iClient][iAuthor] & IGNORE_CHAT)
-		{
-			RemoveFromArray(hRecipients, iResepient);
-			bChanged = true;
-		}
+        if (g_hClientLocalMute[iClient][iAuthor] & IGNORE_CHAT)
+        {
+            RemoveFromArray(hRecipients, iResepient);
+            bChanged = true;
+        }
 
-		else {
-			iResepient ++;
-		}
-	}
+        else {
+            iResepient ++;
+        }
+    }
 
-	return bChanged ? Plugin_Changed : Plugin_Continue;
+    return bChanged ? Plugin_Changed : Plugin_Continue;
 }
 
 Action Cmd_LocalMute(int iClient, int iArgs)
 {
-	if (!iClient) {
-		return Plugin_Handled;
-	}
+    if (!iClient) {
+        return Plugin_Handled;
+    }
 
-	if (!iArgs)
-	{
-		ShowPlayerMenu(iClient);
-		return Plugin_Handled;
-	}
+    if (!iArgs)
+    {
+        ShowPlayerMenu(iClient);
+        return Plugin_Handled;
+    }
 
-	char sArg[32];
-	GetCmdArg(1, sArg, sizeof(sArg));
+    char sArg[32];
+    GetCmdArg(1, sArg, sizeof(sArg));
 
-	int iTarget = FindOneTarget(iClient, sArg);
+    int iTarget = FindOneTarget(iClient, sArg);
 
-	if (iTarget == -1)
-	{
-		CReplyToCommand(iClient, "%T%T", "TAG", iClient, "BAD_ARG", iClient, sArg);
-		return Plugin_Handled;
-	}
+    if (iTarget == -1)
+    {
+        CReplyToCommand(iClient, "%T%T", "TAG", iClient, "BAD_ARG", iClient, sArg);
+        return Plugin_Handled;
+    }
 
-	if (iTarget == iClient) {
-		return Plugin_Handled;
-	}
+    if (iTarget == iClient) {
+        return Plugin_Handled;
+    }
 
-	ShowIgnoreMenu(iClient, iTarget);
+    ShowIgnoreMenu(iClient, iTarget);
 
-	return Plugin_Handled;
+    return Plugin_Handled;
 }
 
 void ShowPlayerMenu(int iClient)
 {
-	Menu hMenu = CreateMenu(HandlerPlayerMenu, MenuAction_Select|MenuAction_End);
+    Menu hMenu = CreateMenu(HandlerPlayerMenu, MenuAction_Select|MenuAction_End);
 
-	SetMenuTitle(hMenu, "%T", "MENU_PLAYER_TITLE", iClient);
+    SetMenuTitle(hMenu, "%T", "MENU_PLAYER_TITLE", iClient);
 
-	char sTarget[4], sName[MAX_NAME_LENGTH];
+    char sTarget[4], sName[MAX_NAME_LENGTH];
 
-	for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
-	{
-		if (!IsClientInGame(iPlayer) || IsFakeClient(iPlayer) || iPlayer == iClient) {
-			continue;
-		}
+    for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
+    {
+        if (!IsClientInGame(iPlayer) || IsFakeClient(iPlayer) || iPlayer == iClient) {
+            continue;
+        }
 
-		IntToString(iPlayer, sTarget, sizeof(sTarget));
-		GetClientNameFixed(iPlayer, sName, sizeof(sName), 25);
+        IntToString(iPlayer, sTarget, sizeof(sTarget));
+        GetClientNameFixed(iPlayer, sName, sizeof(sName), 25);
 
-		AddMenuItem(hMenu, sTarget, sName);
-	}
-	
-	DisplayMenu(hMenu, iClient, MENU_TIME_FOREVER);
+        AddMenuItem(hMenu, sTarget, sName);
+    }
+
+    DisplayMenu(hMenu, iClient, MENU_TIME_FOREVER);
 }
 
 /**
@@ -151,41 +151,41 @@ void ShowPlayerMenu(int iClient)
  */
 int HandlerPlayerMenu(Menu hMenu, MenuAction hAction, int iClient, int iItem)
 {
-	switch(hAction)
-	{
-		case MenuAction_End: CloseHandle(hMenu);
+    switch(hAction)
+    {
+        case MenuAction_End: CloseHandle(hMenu);
 
-		case MenuAction_Select:
-		{
-			char sTarget[4]; GetMenuItem(hMenu, iItem, sTarget, sizeof(sTarget));
+        case MenuAction_Select:
+        {
+            char sTarget[4]; GetMenuItem(hMenu, iItem, sTarget, sizeof(sTarget));
 
-			int iTarget = StringToInt(sTarget);
+            int iTarget = StringToInt(sTarget);
 
-			if (!IsValidClient(iTarget) || !IsClientInGame(iTarget)) {
-				ShowPlayerMenu(iClient);
-			} else {
-				ShowIgnoreMenu(iClient, iTarget);
-			}
-		}
-	}
+            if (!IsValidClient(iTarget) || !IsClientInGame(iTarget)) {
+                ShowPlayerMenu(iClient);
+            } else {
+                ShowIgnoreMenu(iClient, iTarget);
+            }
+        }
+    }
 
-	return 0;
+    return 0;
 }
 
 void ShowIgnoreMenu(int iClient, int iTarget)
 {
-	char sTarget[4]; IntToString(iTarget, sTarget, sizeof(sTarget));
+    char sTarget[4]; IntToString(iTarget, sTarget, sizeof(sTarget));
 
-	Menu hMenu = CreateMenu(HandlerIgnoreMenu, MenuAction_Select|MenuAction_End);
+    Menu hMenu = CreateMenu(HandlerIgnoreMenu, MenuAction_Select|MenuAction_End);
 
-	char sName[MAX_NAME_LENGTH]; GetClientNameFixed(iTarget, sName, sizeof(sName), 25);
+    char sName[MAX_NAME_LENGTH]; GetClientNameFixed(iTarget, sName, sizeof(sName), 25);
 
-	SetMenuTitle(hMenu, "%T", "MENU_IGONORE_TITLE", iClient, sName);
+    SetMenuTitle(hMenu, "%T", "MENU_IGONORE_TITLE", iClient, sName);
 
-	AddMenuItemFormat(hMenu, sTarget, "%T", g_hClientLocalMute[iClient][iTarget] & IGNORE_CHAT ? "MENU_CHAT_PROHIBITED" : "MENU_CHAT_ALLOWED", iClient);
-	AddMenuItemFormat(hMenu, sTarget,  "%T", g_hClientLocalMute[iClient][iTarget] & IGNORE_VOICE ? "MENU_VOICE_PROHIBITED" : "MENU_VOICE_ALLOWED", iClient);
+    AddMenuItemFormat(hMenu, sTarget, "%T", g_hClientLocalMute[iClient][iTarget] & IGNORE_CHAT ? "MENU_CHAT_PROHIBITED" : "MENU_CHAT_ALLOWED", iClient);
+    AddMenuItemFormat(hMenu, sTarget,  "%T", g_hClientLocalMute[iClient][iTarget] & IGNORE_VOICE ? "MENU_VOICE_PROHIBITED" : "MENU_VOICE_ALLOWED", iClient);
 
-	DisplayMenu(hMenu, iClient, MENU_TIME_FOREVER);
+    DisplayMenu(hMenu, iClient, MENU_TIME_FOREVER);
 }
 
 /**
@@ -193,58 +193,58 @@ void ShowIgnoreMenu(int iClient, int iTarget)
  */
 int HandlerIgnoreMenu(Menu hMenu, MenuAction hAction, int iClient, int iItem)
 {
-	switch(hAction)
-	{
-		case MenuAction_End: CloseHandle(hMenu);
+    switch(hAction)
+    {
+        case MenuAction_End: CloseHandle(hMenu);
 
-		case MenuAction_Select:
-		{
-			char sTarget[4]; GetMenuItem(hMenu, iItem, sTarget, sizeof(sTarget));
+        case MenuAction_Select:
+        {
+            char sTarget[4]; GetMenuItem(hMenu, iItem, sTarget, sizeof(sTarget));
 
-			int iTarget = StringToInt(sTarget);
+            int iTarget = StringToInt(sTarget);
 
-			if (!IsValidClient(iTarget) || !IsClientInGame(iTarget))
-			{
-				ShowPlayerMenu(iClient);
-				return 0;
-			}
+            if (!IsValidClient(iTarget) || !IsClientInGame(iTarget))
+            {
+                ShowPlayerMenu(iClient);
+                return 0;
+            }
 
-			switch (iItem)
-			{
-				case 0:
-				{
-					if (g_hClientLocalMute[iClient][iTarget] & IGNORE_CHAT) {
-						g_hClientLocalMute[iClient][iTarget] &= ~IGNORE_CHAT;
-					} else {
-						g_hClientLocalMute[iClient][iTarget] |= IGNORE_CHAT;
-					}
+            switch (iItem)
+            {
+                case 0:
+                {
+                    if (g_hClientLocalMute[iClient][iTarget] & IGNORE_CHAT) {
+                        g_hClientLocalMute[iClient][iTarget] &= ~IGNORE_CHAT;
+                    } else {
+                        g_hClientLocalMute[iClient][iTarget] |= IGNORE_CHAT;
+                    }
 
-					ShowIgnoreMenu(iClient, iTarget);
-				}
+                    ShowIgnoreMenu(iClient, iTarget);
+                }
 
-				case 1:
-				{
-					if (g_hClientLocalMute[iClient][iTarget] & IGNORE_VOICE)
-					{
-						g_hClientLocalMute[iClient][iTarget] &= ~IGNORE_VOICE;
-						SetListenOverride(iClient, iTarget, Listen_Default);
-					}
+                case 1:
+                {
+                    if (g_hClientLocalMute[iClient][iTarget] & IGNORE_VOICE)
+                    {
+                        g_hClientLocalMute[iClient][iTarget] &= ~IGNORE_VOICE;
+                        SetListenOverride(iClient, iTarget, Listen_Default);
+                    }
 
-					else
-					{
-						g_hClientLocalMute[iClient][iTarget] |= IGNORE_VOICE;
-						SetListenOverride(iClient, iTarget, Listen_No);
-					}
+                    else
+                    {
+                        g_hClientLocalMute[iClient][iTarget] |= IGNORE_VOICE;
+                        SetListenOverride(iClient, iTarget, Listen_No);
+                    }
 
-					ShowIgnoreMenu(iClient, iTarget);
-				}
+                    ShowIgnoreMenu(iClient, iTarget);
+                }
 
-				default: ShowPlayerMenu(iClient);
-			}
-		}
-	}
+                default: ShowPlayerMenu(iClient);
+            }
+        }
+    }
 
-	return 0;
+    return 0;
 }
 
 /*
@@ -252,40 +252,40 @@ int HandlerIgnoreMenu(Menu hMenu, MenuAction hAction, int iClient, int iItem)
  */
 int FindOneTarget(int iClient, const char[] sTarget)
 {
-	char iTargetName[MAX_TARGET_LENGTH];
-	int iTargetList[1];
-	bool isMl = false;
+    char iTargetName[MAX_TARGET_LENGTH];
+    int iTargetList[1];
+    bool isMl = false;
 
-	bool bFound = ProcessTargetString(
-		sTarget,
-		iClient,
-		iTargetList,
-		1,
-		COMMAND_FILTER_CONNECTED|COMMAND_FILTER_NO_IMMUNITY|COMMAND_FILTER_NO_MULTI|COMMAND_FILTER_NO_BOTS,
-		iTargetName,
-		sizeof(iTargetName),
-		isMl
-	) > 0;
+    bool bFound = ProcessTargetString(
+        sTarget,
+        iClient,
+        iTargetList,
+        1,
+        COMMAND_FILTER_CONNECTED|COMMAND_FILTER_NO_IMMUNITY|COMMAND_FILTER_NO_MULTI|COMMAND_FILTER_NO_BOTS,
+        iTargetName,
+        sizeof(iTargetName),
+        isMl
+    ) > 0;
 
-	return bFound ? iTargetList[0] : -1;
+    return bFound ? iTargetList[0] : -1;
 }
 
 void GetClientNameFixed(int iClient, char[] name, int length, int iMaxSize)
 {
-	GetClientName(iClient, name, length);
+    GetClientName(iClient, name, length);
 
-	if (strlen(name) > iMaxSize)
-	{
-		name[iMaxSize - 3] = name[iMaxSize - 2] = name[iMaxSize - 1] = '.';
-		name[iMaxSize] = '\0';
-	}
+    if (strlen(name) > iMaxSize)
+    {
+        name[iMaxSize - 3] = name[iMaxSize - 2] = name[iMaxSize - 1] = '.';
+        name[iMaxSize] = '\0';
+    }
 }
 
 bool AddMenuItemFormat(Handle hMenu, const char[] sKey, const char[] sText, any ...)
 {
-	char sFormatText[128];
-	VFormat(sFormatText, sizeof(sFormatText), sText, 4);
-	return AddMenuItem(hMenu, sKey, sFormatText);
+    char sFormatText[128];
+    VFormat(sFormatText, sizeof(sFormatText), sText, 4);
+    return AddMenuItem(hMenu, sKey, sFormatText);
 }
 
 /**
@@ -295,5 +295,5 @@ bool AddMenuItemFormat(Handle hMenu, const char[] sKey, const char[] sText, any 
  * @return          True if client is valid, false otherwise.
  */
 bool IsValidClient(int iClient) {
-	return (1 <= iClient <= MaxClients);
+    return (1 <= iClient <= MaxClients);
 }
