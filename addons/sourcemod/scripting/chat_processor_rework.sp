@@ -6,15 +6,13 @@
 
 
 public Plugin myinfo = {
-	name = "ChatProcessorRework",
-	author = "Simple Plugins, Mini, TouchMe",
-	description = "Process chat and allows other plugins to manipulate chat",
-	version = "build_0002",
-	url = "https://github.com/TouchMe-Inc/l4d2_chat_processor_rework"
+    name        = "ChatProcessorRework",
+    author      = "Simple Plugins, Mini, TouchMe",
+    description = "Process chat and allows other plugins to manipulate chat",
+    version     = "build_0002",
+    url         = "https://github.com/TouchMe-Inc/l4d2_chat_processor_rework"
 };
 
-
-#define SENDER_WORLD           0
 
 /*
  * String size.
@@ -27,7 +25,6 @@ public Plugin myinfo = {
  * Chat flags.
  */
 #define CHATFLAGS_INVALID      0
-
 #define CHATFLAGS_TEAM         (1 << 0)
 #define CHATFLAGS_SPECTATOR    (1 << 1)
 #define CHATFLAGS_SURVIVOR     (1 << 2)
@@ -37,14 +34,16 @@ public Plugin myinfo = {
 /*
  * Team.
  */
-#define TEAM_SPECTATOR          1
-#define TEAM_SURVIVOR           2
-#define TEAM_INFECTED           3
+#define TEAM_SPECTATOR         1
+#define TEAM_SURVIVOR          2
+#define TEAM_INFECTED          3
 
 /*
  * Other.
  */
-#define TRANSLATIONS            "chat_processor_rework.phrases"
+#define SENDER_WORLD           0
+#define DEFAULT_HIDDEN_TRIGGER '/'
+#define TRANSLATIONS           "chat_processor_rework.phrases"
 
 
 GlobalForward g_fwdOnChatMessage = null;
@@ -62,239 +61,268 @@ GlobalForward g_fwdOnChatMessagePost = null;
  */
 public APLRes AskPluginLoad2(Handle myself, bool bLate, char[] sErr, int iErrLen)
 {
-	if (GetEngineVersion() != Engine_Left4Dead2)
-	{
-		strcopy(sErr, iErrLen, "Plugin only supports Left 4 Dead 2");
-		return APLRes_SilentFailure;
-	}
+    if (GetEngineVersion() != Engine_Left4Dead2)
+    {
+        strcopy(sErr, iErrLen, "Plugin only supports Left 4 Dead 2");
+        return APLRes_SilentFailure;
+    }
 
-	g_fwdOnChatMessage = CreateGlobalForward("OnChatMessage", ET_Hook, Param_CellByRef, Param_Cell, Param_String, Param_String, Param_Cell);
-	g_fwdOnChatMessagePost = CreateGlobalForward("OnChatMessage_Post", ET_Ignore, Param_Cell, Param_Cell, Param_String, Param_String, Param_Cell);
+    g_fwdOnChatMessage = CreateGlobalForward("OnChatMessage", ET_Hook, Param_Cell, Param_Cell, Param_String, Param_String, Param_Cell);
+    g_fwdOnChatMessagePost = CreateGlobalForward("OnChatMessage_Post", ET_Ignore, Param_Cell, Param_Cell, Param_String, Param_String, Param_Cell);
 
-	RegPluginLibrary("chat_processor_rework");
+    RegPluginLibrary("chat_processor_rework");
 
-	return APLRes_Success;
+    return APLRes_Success;
 }
 
 public void OnPluginStart()
 {
-	LoadTranslations(TRANSLATIONS);
+    LoadTranslations(TRANSLATIONS);
 
-	AddCommandListener(Cmd_Say, "say");
-	AddCommandListener(Cmd_Say, "say_team");
+    AddCommandListener(Cmd_Say, "say");
+    AddCommandListener(Cmd_Say, "say_team");
 }
 
 Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
 {
-	if (iSender == SENDER_WORLD || !IsClientConnected(iSender)) {
-		return Plugin_Continue;
-	}
+    if (iSender == SENDER_WORLD || !IsClientConnected(iSender)) {
+        return Plugin_Continue;
+    }
 
-	/**
-	 * Get the message.
-	 */
- 	char sMessage[MAXLENGTH_MESSAGE];
-	GetCmdArgString(sMessage, sizeof(sMessage));
-	CRemoveTags(sMessage, sizeof(sMessage));
-	TrimString(sMessage);
-	StripQuotes(sMessage);
+    /**
+     * Get the message.
+     */
+    char sMessage[MAXLENGTH_MESSAGE];
+    GetCmdArgString(sMessage, sizeof(sMessage));
+    TrimString(sMessage);
+    StripQuotes(sMessage);
+    CRemoveTags(sMessage, sizeof(sMessage));
 
-	if (sMessage[0] == '/') {
-		return Plugin_Handled;
-	}
+    if (sMessage[0] == DEFAULT_HIDDEN_TRIGGER) {
+        return Plugin_Handled;
+    }
 
-	/*
-	 * Get the senders name.
-	 */
-	char sSenderName[MAXLENGTH_NAME];
-	GetClientName(iSender, sSenderName, sizeof(sSenderName));
-	CRemoveTags(sSenderName, sizeof(sSenderName));
-	StripQuotes(sSenderName);
+    /*
+     * Get the sender name.
+     */
+    char sSenderName[MAXLENGTH_NAME];
+    GetClientName(iSender, sSenderName, sizeof(sSenderName));
+    StripQuotes(sSenderName);
+    CRemoveTags(sSenderName, sizeof(sSenderName));
 
-	int iTeam = GetClientTeam(iSender);
+    /*
+     * Get the sender team. Wow.
+     */
+    int iTeam = GetClientTeam(iSender);
 
-	/*
-	 * Get the message flags.
-	 */
-	int iFlags = CHATFLAGS_INVALID;
+    /*
+     * Get the message flags.
+     */
+    int iFlags = CHATFLAGS_INVALID;
 
-	if (strcmp(sCmd, "say_team") == 0) {
-		iFlags = iFlags | CHATFLAGS_TEAM;
-	}
+    if (strcmp(sCmd, "say_team") == 0) {
+        iFlags = iFlags | CHATFLAGS_TEAM;
+    }
 
-	switch (iTeam)
-	{
-		case TEAM_SPECTATOR: iFlags = iFlags | CHATFLAGS_SPECTATOR;
-		case TEAM_SURVIVOR: iFlags = iFlags | CHATFLAGS_SURVIVOR;
-		case TEAM_INFECTED: iFlags = iFlags | CHATFLAGS_INFECTED;
-	}
+    switch (iTeam)
+    {
+        case TEAM_SPECTATOR: iFlags = iFlags | CHATFLAGS_SPECTATOR;
+        case TEAM_SURVIVOR: iFlags = iFlags | CHATFLAGS_SURVIVOR;
+        case TEAM_INFECTED: iFlags = iFlags | CHATFLAGS_INFECTED;
+    }
 
-	if (!IsPlayerAlive(iSender)) {
-		iFlags = iFlags | CHATFLAGS_DEAD;
-	}
+    if (!IsPlayerAlive(iSender)) {
+        iFlags = iFlags | CHATFLAGS_DEAD;
+    }
 
-	/**
-	 * Store the clients in an array so the call can manipulate it.
-	 */
-	Handle hRecipients = CreateArray();
+    /**
+     * Store the clients in an array so the call can manipulate it.
+     */
+    Handle hRecipients = iFlags & CHATFLAGS_TEAM ? PrepareRecipients(iTeam) : PrepareRecipients();
 
-	for (int iRecipient = 1; iRecipient <= MaxClients; iRecipient ++)
-	{
-		if (!IsClientInGame(iRecipient)) {
-			continue;
-		}
+    /**
+     * Preparing a copy of the data to undo changes.
+     */
+    char sOriginalName[MAXLENGTH_NAME];
+    strcopy(sOriginalName, sizeof(sOriginalName), sSenderName);
 
-		if (IsFakeClient(iRecipient) && IsClientSourceTV(iRecipient))
-		{
-			PushArrayCell(hRecipients, iRecipient);
-			continue;
-		}
+    char sOriginalMessage[MAXLENGTH_MESSAGE];
+    strcopy(sOriginalMessage, sizeof(sOriginalMessage), sMessage);
 
-		if (iFlags & CHATFLAGS_TEAM && GetClientTeam(iRecipient) != iTeam) {
-			continue;
-		}
+    Handle hOriginalRecipients = CloneArray(hRecipients);
 
-		PushArrayCell(hRecipients, iRecipient);
-	}
+    /*
+     * Start the forward for other plugins.
+     */
+    Action fResult = CallOnChatMessage(iSender, hRecipients, sSenderName, sizeof(sSenderName), sMessage, sizeof(sMessage), iFlags);
 
-	/*
-	 * Because the message could be changed but not the name
-	 * we need to compare the original name to the returned name.
-	 * We do this because we may have to add the team color code to the name,
-	 * where as the message doesn't get a color code by default.
-	 */
-	char sOriginalName[MAXLENGTH_NAME];
-	strcopy(sOriginalName, sizeof(sOriginalName), sSenderName);
+    if (fResult == Plugin_Continue)
+    {
+        CloseHandle(hRecipients);
+        hRecipients = CloneArray(hOriginalRecipients);
+        CloseHandle(hOriginalRecipients);
 
-	/*
-	 * Start the forward for other plugins.
-	 */
-	Action fResult = Plugin_Continue;
+        strcopy(sSenderName, sizeof(sSenderName), sOriginalName);
+        strcopy(sMessage, sizeof(sMessage), sOriginalMessage);
+    }
 
-	Call_StartForward(g_fwdOnChatMessage);
-	Call_PushCellRef(iSender);
-	Call_PushCell(hRecipients);
-	Call_PushStringEx(sSenderName, sizeof(sSenderName), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
-	Call_PushStringEx(sMessage, sizeof(sMessage), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
-	Call_PushCell(iFlags);
+    else if (fResult == Plugin_Stop)
+    {
+        CloseHandle(hRecipients);
+        CloseHandle(hOriginalRecipients);
+        return Plugin_Handled;
+    }
 
-	int fError = Call_Finish(fResult);
+    /**
+     * Checking if there are valid recipients.
+     */
+    int iRecipients = ValidateRecipients(hRecipients);
 
-	if (fError != SP_ERROR_NONE)
-	{
-		ThrowNativeError(fError, "Forward OnChatMessage failed");
-		CloseHandle(hRecipients);
-		return Plugin_Continue;
-	}
+    if (!iRecipients) {
+        return Plugin_Handled;
+    }
 
-	else if (fResult == Plugin_Continue)
-	{
-		CloseHandle(hRecipients);
-		return Plugin_Continue;
-	}
+    /*
+     * This is the check for a name change. If it has not changed we add the team color code.
+     */
+    if (StrEqual(sOriginalName, sSenderName)) {
+        Format(sSenderName, sizeof(sSenderName), "\x03%s", sSenderName);
+    }
 
-	else if (fResult == Plugin_Stop)
-	{
-		CloseHandle(hRecipients);
-		return Plugin_Handled;
-	}
+    char sChatType[64]; GetChatTemplateByFlags(iFlags, sChatType, sizeof(sChatType));
 
-	/*
-	 * This is the check for a name change. If it has not changed we add the team color code.
-	 */
-	if (StrEqual(sOriginalName, sSenderName)) {
-		Format(sSenderName, sizeof(sSenderName), "\x03%s", sSenderName);
-	}
+    for (int iRecipient = 0; iRecipient < iRecipients; iRecipient ++)
+    {
+        int iPlayer = GetArrayCell(hRecipients, iRecipient);
 
-	int iResepient = 0;
+        CPrintToChatEx(iPlayer, iSender, "%T", sChatType, iPlayer, sSenderName, sMessage);
+    }
 
-	while (iResepient < GetArraySize(hRecipients))
-	{
-		if (!IsValidPlayer(GetArrayCell(hRecipients, iResepient))) {
-			RemoveFromArray(hRecipients, iResepient);
-		} else {
-			iResepient ++;
-		}
-	}
+    /*
+     * Start forwarding sent messages for other plugins.
+     */
+    CallOnChatMessagePost(iSender, hRecipients, sSenderName, sMessage, iFlags);
 
-	/*
-	 * Create a dp for print the message on the next gameframe.
-	 */
-	Handle hPack = CreateDataPack();
+    /*
+     * Clearing the Handle.
+     */
+    CloseHandle(hRecipients);
 
-	WritePackCell(hPack, hRecipients);
-	WritePackCell(hPack, iSender);
-	WritePackString(hPack, sSenderName);
-	WritePackString(hPack, sMessage);
-	WritePackCell(hPack, iFlags);
-
-	RequestFrame(Frame_SendClientMessage, hPack);
-
-	// Stop the original message.
-	return Plugin_Handled;
+    /*
+     * Stop the original message.
+     */
+    return Plugin_Handled;
 }
 
-void Frame_SendClientMessage(Handle hPack)
+void GetChatTemplateByFlags(int iFlags, char[] sChatTemplate, int iLength)
 {
-	ResetPack(hPack);
+    if (iFlags & CHATFLAGS_TEAM) {
+        if (iFlags & CHATFLAGS_SURVIVOR) {
+            strcopy(sChatTemplate, iLength, iFlags & CHATFLAGS_DEAD ? "L4D_Chat_Survivor_Dead" : "L4D_Chat_Survivor");
+        } else if (iFlags & CHATFLAGS_INFECTED) {
+            strcopy(sChatTemplate, iLength, iFlags & CHATFLAGS_DEAD ? "L4D_Chat_Infected_Dead" : "L4D_Chat_Infected");
+        } else if (iFlags & CHATFLAGS_SPECTATOR) {
+            strcopy(sChatTemplate, iLength, "L4D_Chat_Spec");
+        }
+    } else if (iFlags & CHATFLAGS_SPECTATOR) {
+        strcopy(sChatTemplate, iLength, "L4D_Chat_AllSpec");
+    } else if (iFlags & CHATFLAGS_DEAD) {
+        strcopy(sChatTemplate, iLength, "L4D_Chat_AllDead");
+    } else {
+        strcopy(sChatTemplate, iLength, "L4D_Chat_All");
+    }
+}
 
-	/**
-	 * Get dp data.
-	 */
-	Handle hRecipients = ReadPackCell(hPack);
-	int iSender = ReadPackCell(hPack);
-	char sSenderName[MAXLENGTH_NAME]; ReadPackString(hPack, sSenderName, sizeof(sSenderName));
-	char sMessage[MAXLENGTH_INPUT]; ReadPackString(hPack, sMessage, sizeof(sMessage));
-	int iFlags = ReadPackCell(hPack);
+Handle PrepareRecipients(int iTeam = -1)
+{
+    Handle hRecipients = CreateArray();
 
-	CloseHandle(hPack);
+    bool bIsValidTeam = IsValidTeam(iTeam);
 
-	char sChatType[64];
+    for (int iRecipient = 1; iRecipient <= MaxClients; iRecipient ++)
+    {
+        if (!IsClientInGame(iRecipient)) {
+            continue;
+        }
 
-	if (iFlags & CHATFLAGS_TEAM)
-	{
-		if (iFlags & CHATFLAGS_SURVIVOR) {
-			strcopy(sChatType, sizeof(sChatType), iFlags & CHATFLAGS_DEAD ? "L4D_Chat_Survivor_Dead" : "L4D_Chat_Survivor");
-		} else if (iFlags & CHATFLAGS_INFECTED) {
-			strcopy(sChatType, sizeof(sChatType), iFlags & CHATFLAGS_DEAD ? "L4D_Chat_Infected_Dead" : "L4D_Chat_Infected");
-		} else if (iFlags & CHATFLAGS_SPECTATOR) {
-			strcopy(sChatType, sizeof(sChatType), "L4D_Chat_Spec");
-		}
-	}
+        if (IsFakeClient(iRecipient))
+        {
+            if (IsClientSourceTV(iRecipient)) {
+                PushArrayCell(hRecipients, iRecipient);
+            }
 
-	else
-	{
-		if (iFlags & CHATFLAGS_SPECTATOR) {
-			strcopy(sChatType, sizeof(sChatType), "L4D_Chat_AllSpec");
-		} else if (iFlags & CHATFLAGS_DEAD) {
-			strcopy(sChatType, sizeof(sChatType), "L4D_Chat_AllDead");
-		} else {
-			strcopy(sChatType, sizeof(sChatType), "L4D_Chat_All");
-		}
-	}
+            continue;
+        }
 
-	int iRecipients = GetArraySize(hRecipients);
+        if (bIsValidTeam && GetClientTeam(iRecipient) != iTeam) {
+            continue;
+        }
 
-	for (int iRecipient = 0; iRecipient < iRecipients; iRecipient ++)
-	{
-		int iPlayer = GetArrayCell(hRecipients, iRecipient);
+        PushArrayCell(hRecipients, iRecipient);
+    }
 
-		if (!IsValidPlayer(iPlayer)) {
-			continue;
-		}
+    return hRecipients;
+}
 
-		CPrintToChatEx(iPlayer, iSender, "%T", sChatType, iPlayer, sSenderName, sMessage);
-	}
+int ValidateRecipients(Handle hRecipients)
+{
+    int iRecipientCounter = 0;
 
-	Call_StartForward(g_fwdOnChatMessagePost);
-	Call_PushCell(iSender);
-	Call_PushCell(hRecipients);
-	Call_PushString(sSenderName);
-	Call_PushString(sMessage);
-	Call_PushCell(iFlags);
-	Call_Finish();
+    while (iRecipientCounter < GetArraySize(hRecipients))
+    {
+        if (!IsValidRecipient(GetArrayCell(hRecipients, iRecipientCounter))) {
+            RemoveFromArray(hRecipients, iRecipientCounter);
+        } else {
+            iRecipientCounter ++;
+        }
+    }
 
-	CloseHandle(hRecipients);
+    return iRecipientCounter;
+}
+
+Action CallOnChatMessage(int iSender, Handle hRecipients, char[] sSenderName, int iSenderNameLength, char[] sMessage, int iMessageLength, int iFlags)
+{
+    Action fResult = Plugin_Continue;
+
+    if (GetForwardFunctionCount(g_fwdOnChatMessage))
+    {
+        Call_StartForward(g_fwdOnChatMessage);
+        Call_PushCell(iSender);
+        Call_PushCell(hRecipients);
+        Call_PushStringEx(sSenderName, iSenderNameLength, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+        Call_PushStringEx(sMessage, iMessageLength, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+        Call_PushCell(iFlags);
+
+        if (Call_Finish(fResult) != SP_ERROR_NONE) {
+            return Plugin_Continue;
+        }
+    }
+
+    return fResult;
+}
+
+void CallOnChatMessagePost(int iSender, Handle hRecipients, char[] sSenderName, char[] sMessage, int iFlags)
+{
+    if (GetForwardFunctionCount(g_fwdOnChatMessagePost))
+    {
+        Call_StartForward(g_fwdOnChatMessagePost);
+        Call_PushCell(iSender);
+        Call_PushCell(hRecipients);
+        Call_PushString(sSenderName);
+        Call_PushString(sMessage);
+        Call_PushCell(iFlags);
+        Call_Finish();
+    }
+}
+
+/**
+ * Validates if is a valid team.
+ *
+ * @param iTeam     Team index.
+ * @return          True if team is valid, false otherwise.
+ */
+bool IsValidTeam(int iTeam) {
+    return iTeam >= TEAM_SPECTATOR && iTeam <= TEAM_INFECTED;
 }
 
 /**
@@ -304,14 +332,23 @@ void Frame_SendClientMessage(Handle hPack)
  * @return          True if client is valid, false otherwise.
  */
 bool IsValidClient(int iClient) {
-	return (1 <= iClient <= MaxClients);
+    return (1 <= iClient <= MaxClients);
 }
 
-bool IsValidPlayer(int iClient)
+/**
+ * Validates if is a valid recipient.
+ *
+ * @param iRecipient Recipient index.
+ * @return           True if recipient is valid, false otherwise.
+ */
+bool IsValidRecipient(int iRecipient)
 {
-	if (!IsValidClient(iClient) || !IsClientConnected(iClient) || IsFakeClient(iClient)) {
-		return false;
-	}
+    if (!IsValidClient(iRecipient)
+    || !IsClientInGame(iRecipient)
+    || (IsFakeClient(iRecipient) && !IsClientSourceTV(iRecipient))
+    ) {
+        return false;
+    }
 
-	return IsClientInGame(iClient);
+    return true;
 }
