@@ -9,7 +9,7 @@ public Plugin myinfo = {
     name        = "ChatProcessorRework",
     author      = "Simple Plugins, Mini, TouchMe",
     description = "Process chat and allows other plugins to manipulate chat",
-    version     = "build_0002",
+    version     = "build_0003",
     url         = "https://github.com/TouchMe-Inc/l4d2_chat_processor_rework"
 };
 
@@ -32,14 +32,14 @@ public Plugin myinfo = {
 #define CHATFLAGS_DEAD         (1 << 4)
 
 /*
- * Team.
+ * Team definitions.
  */
 #define TEAM_SPECTATOR         1
 #define TEAM_SURVIVOR          2
 #define TEAM_INFECTED          3
 
 /*
- * Other.
+ * Other definitions.
  */
 #define SENDER_WORLD           0
 #define DEFAULT_HIDDEN_TRIGGER '/'
@@ -83,6 +83,14 @@ public void OnPluginStart()
     AddCommandListener(Cmd_Say, "say_team");
 }
 
+/**
+ * Handler for "say" and "say_team" commands.
+ *
+ * @param iSender     Sender index.
+ * @param sCmd        Command.
+ * @param iArgs       Number of arguments.
+ * @return            Plugin action.
+ */
 Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
 {
     if (iSender == SENDER_WORLD || !IsClientConnected(iSender)) {
@@ -154,7 +162,7 @@ Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
     /*
      * Start the forward for other plugins.
      */
-    Action fResult = CallOnChatMessage(iSender, hRecipients, sSenderName, sizeof(sSenderName), sMessage, sizeof(sMessage), iFlags);
+    Action fResult = CallOnChatMessage(iSender, hRecipients, sSenderName, sMessage, iFlags);
 
     if (fResult == Plugin_Continue)
     {
@@ -214,6 +222,13 @@ Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
     return Plugin_Handled;
 }
 
+/**
+ * Get chat template by flags.
+ *
+ * @param iFlags         Chat flags.
+ * @param sChatTemplate  Buffer for chat template.
+ * @param iLength        Buffer length.
+ */
 void GetChatTemplateByFlags(int iFlags, char[] sChatTemplate, int iLength)
 {
     if (iFlags & CHATFLAGS_TEAM) {
@@ -233,6 +248,12 @@ void GetChatTemplateByFlags(int iFlags, char[] sChatTemplate, int iLength)
     }
 }
 
+/**
+ * Prepare recipients.
+ *
+ * @param iTeam  Team index (default -1).
+ * @return       Handle of recipients array.
+ */
 Handle PrepareRecipients(int iTeam = -1)
 {
     Handle hRecipients = CreateArray();
@@ -264,6 +285,12 @@ Handle PrepareRecipients(int iTeam = -1)
     return hRecipients;
 }
 
+/**
+ * Validate recipients.
+ *
+ * @param hRecipients  Handle of recipients array.
+ * @return             Number of valid recipients.
+ */
 int ValidateRecipients(Handle hRecipients)
 {
     int iRecipientCounter = 0;
@@ -280,7 +307,17 @@ int ValidateRecipients(Handle hRecipients)
     return iRecipientCounter;
 }
 
-Action CallOnChatMessage(int iSender, Handle hRecipients, char[] sSenderName, int iSenderNameLength, char[] sMessage, int iMessageLength, int iFlags)
+/**
+ * Call forward for chat message.
+ *
+ * @param iSender           Sender index.
+ * @param hRecipients       Handle of recipients array.
+ * @param sSenderName       Sender name.
+ * @param sMessage          Message.
+ * @param iFlags            Chat flags.
+ * @return                  Plugin action.
+ */
+Action CallOnChatMessage(int iSender, Handle hRecipients, char[] sSenderName, char[] sMessage, int iFlags)
 {
     Action fResult = Plugin_Continue;
 
@@ -289,8 +326,8 @@ Action CallOnChatMessage(int iSender, Handle hRecipients, char[] sSenderName, in
         Call_StartForward(g_fwdOnChatMessage);
         Call_PushCell(iSender);
         Call_PushCell(hRecipients);
-        Call_PushStringEx(sSenderName, iSenderNameLength, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
-        Call_PushStringEx(sMessage, iMessageLength, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+        Call_PushStringEx(sSenderName, MAXLENGTH_NAME, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+        Call_PushStringEx(sMessage, MAXLENGTH_MESSAGE, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
         Call_PushCell(iFlags);
 
         if (Call_Finish(fResult) != SP_ERROR_NONE) {
@@ -301,6 +338,15 @@ Action CallOnChatMessage(int iSender, Handle hRecipients, char[] sSenderName, in
     return fResult;
 }
 
+/**
+ * Call forward for post chat message.
+ *
+ * @param iSender       Sender index.
+ * @param hRecipients   Handle of recipients array.
+ * @param sSenderName   Sender name.
+ * @param sMessage      Message.
+ * @param iFlags        Chat flags.
+ */
 void CallOnChatMessagePost(int iSender, Handle hRecipients, char[] sSenderName, char[] sMessage, int iFlags)
 {
     if (GetForwardFunctionCount(g_fwdOnChatMessagePost))
