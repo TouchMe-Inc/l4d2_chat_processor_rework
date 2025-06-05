@@ -18,8 +18,8 @@ public Plugin myinfo = {
  * String size.
  */
 #define MAXLENGTH_TAG          64
-#define MAXLENGTH_NAME         64  // This is backwords math to get compability.  Sourcemod has it set at 32, but there is room for more.
-#define MAXLENGTH_MESSAGE      256 // This is based upon the SDK and the length of the entire message, including tags, name, : etc.
+#define MAXLENGTH_NAME         128
+#define MAXLENGTH_MESSAGE      256
 
 /*
  * Chat flags.

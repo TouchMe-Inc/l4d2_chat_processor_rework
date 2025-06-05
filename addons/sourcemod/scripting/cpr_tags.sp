@@ -54,12 +54,12 @@ void ImportTagsFromFile(StringMap smTags, const char[] szPath)
     {
         if (kv.GotoFirstSubKey())
         {
+            char steamID[64];
+            char prefix[64];
+
             do
             {
-                char steamID[64];
                 kv.GetSectionName(steamID, sizeof(steamID));
-
-                char prefix[64];
                 kv.GetString("Prefix", prefix, sizeof(prefix));
 
                 smTags.SetString(steamID, prefix);

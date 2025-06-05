@@ -7,7 +7,7 @@
 
 
 public Plugin myinfo = {
-    name        = "SpecViewTeamChat",
+    name        = "[CPR] SpecViewTeamChat",
     author      = "TouchMe",
     description = "Allows an observer to see players team chat",
     version     = "build0000",

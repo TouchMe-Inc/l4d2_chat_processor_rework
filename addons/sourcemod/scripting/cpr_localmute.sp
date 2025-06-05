@@ -8,7 +8,7 @@
 
 
 public Plugin myinfo = {
-    name        = "LocalMute",
+    name        = "[CPR] LocalMute",
     author      = "TouchMe",
     description = "Allows a player to locally mute another player's text and voice chat",
     version     = "build0000",
