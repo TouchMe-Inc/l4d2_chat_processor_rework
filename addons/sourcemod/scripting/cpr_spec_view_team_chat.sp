@@ -7,7 +7,7 @@
 
 
 public Plugin myinfo = {
-    name        = "SpecViewTeamChat",
+    name        = "[CPR] SpecViewTeamChat",
     author      = "TouchMe",
     description = "Allows an observer to see players team chat",
     version     = "build0000",
@@ -38,7 +38,7 @@ public APLRes AskPluginLoad2(Handle myself, bool bLate, char[] sErr, int iErrLen
     return APLRes_Success;
 }
 
-public Action OnChatMessage(int iAuthor, Handle hRecipients, char[] sName, char[] sMessage, int iFlags)
+public Action OnChatMessage(int iAuthor, Handle hRecipients, char[] szTag, char[] szName, char[] szMessage, int iFlags)
 {
     if (iFlags & CHATFLAGS_SPECTATOR || ~iFlags & CHATFLAGS_TEAM) {
         return Plugin_Continue;

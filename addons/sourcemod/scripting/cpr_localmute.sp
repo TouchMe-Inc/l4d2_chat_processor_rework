@@ -8,7 +8,7 @@
 
 
 public Plugin myinfo = {
-    name        = "LocalMute",
+    name        = "[CPR] LocalMute",
     author      = "TouchMe",
     description = "Allows a player to locally mute another player's text and voice chat",
     version     = "build0000",
@@ -61,7 +61,7 @@ public void OnClientDisconnect(int iClient)
     }
 }
 
-public Action OnChatMessage(int iAuthor, Handle hRecipients, char[] sName, char[] sMessage, int iFlags)
+public Action OnChatMessage(int iAuthor, Handle hRecipients, char[] szTag, char[] szName, char[] szMessage, int iFlags)
 {
     int iResepient = 0;
     int iClient = 0;
@@ -103,14 +103,14 @@ Action Cmd_LocalMute(int iClient, int iArgs)
         return Plugin_Handled;
     }
 
-    char sArg[32];
-    GetCmdArg(1, sArg, sizeof(sArg));
+    char szArg[32];
+    GetCmdArg(1, szArg, sizeof(szArg));
 
-    int iTarget = FindOneTarget(iClient, sArg);
+    int iTarget = FindOneTarget(iClient, szArg);
 
     if (iTarget == -1)
     {
-        CReplyToCommand(iClient, "%T%T", "TAG", iClient, "BAD_ARG", iClient, sArg);
+        CReplyToCommand(iClient, "%T%T", "TAG", iClient, "BAD_ARG", iClient, szArg);
         return Plugin_Handled;
     }
 
@@ -129,7 +129,7 @@ void ShowPlayerMenu(int iClient)
 
     SetMenuTitle(hMenu, "%T", "MENU_PLAYER_TITLE", iClient);
 
-    char sTarget[4], sName[MAX_NAME_LENGTH];
+    char szTarget[4], szName[MAX_NAME_LENGTH];
 
     for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
     {
@@ -137,10 +137,10 @@ void ShowPlayerMenu(int iClient)
             continue;
         }
 
-        IntToString(iPlayer, sTarget, sizeof(sTarget));
-        GetClientNameFixed(iPlayer, sName, sizeof(sName), 25);
+        IntToString(iPlayer, szTarget, sizeof(szTarget));
+        GetClientNameFixed(iPlayer, szName, sizeof(szName), 25);
 
-        AddMenuItem(hMenu, sTarget, sName);
+        AddMenuItem(hMenu, szTarget, szName);
     }
 
     DisplayMenu(hMenu, iClient, MENU_TIME_FOREVER);
@@ -157,9 +157,9 @@ int HandlerPlayerMenu(Menu hMenu, MenuAction hAction, int iClient, int iItem)
 
         case MenuAction_Select:
         {
-            char sTarget[4]; GetMenuItem(hMenu, iItem, sTarget, sizeof(sTarget));
+            char szTarget[4]; GetMenuItem(hMenu, iItem, szTarget, sizeof(szTarget));
 
-            int iTarget = StringToInt(sTarget);
+            int iTarget = StringToInt(szTarget);
 
             if (!IsValidClient(iTarget) || !IsClientInGame(iTarget)) {
                 ShowPlayerMenu(iClient);
@@ -174,16 +174,16 @@ int HandlerPlayerMenu(Menu hMenu, MenuAction hAction, int iClient, int iItem)
 
 void ShowIgnoreMenu(int iClient, int iTarget)
 {
-    char sTarget[4]; IntToString(iTarget, sTarget, sizeof(sTarget));
+    char szTarget[4]; IntToString(iTarget, szTarget, sizeof(szTarget));
 
     Menu hMenu = CreateMenu(HandlerIgnoreMenu, MenuAction_Select|MenuAction_End);
 
-    char sName[MAX_NAME_LENGTH]; GetClientNameFixed(iTarget, sName, sizeof(sName), 25);
+    char szName[MAX_NAME_LENGTH]; GetClientNameFixed(iTarget, szName, sizeof(szName), 25);
 
-    SetMenuTitle(hMenu, "%T", "MENU_IGONORE_TITLE", iClient, sName);
+    SetMenuTitle(hMenu, "%T", "MENU_IGONORE_TITLE", iClient, szName);
 
-    AddMenuItemFormat(hMenu, sTarget, "%T", g_hClientLocalMute[iClient][iTarget] & IGNORE_CHAT ? "MENU_CHAT_PROHIBITED" : "MENU_CHAT_ALLOWED", iClient);
-    AddMenuItemFormat(hMenu, sTarget,  "%T", g_hClientLocalMute[iClient][iTarget] & IGNORE_VOICE ? "MENU_VOICE_PROHIBITED" : "MENU_VOICE_ALLOWED", iClient);
+    AddMenuItemFormat(hMenu, szTarget, "%T", g_hClientLocalMute[iClient][iTarget] & IGNORE_CHAT ? "MENU_CHAT_PROHIBITED" : "MENU_CHAT_ALLOWED", iClient);
+    AddMenuItemFormat(hMenu, szTarget,  "%T", g_hClientLocalMute[iClient][iTarget] & IGNORE_VOICE ? "MENU_VOICE_PROHIBITED" : "MENU_VOICE_ALLOWED", iClient);
 
     DisplayMenu(hMenu, iClient, MENU_TIME_FOREVER);
 }
@@ -199,9 +199,9 @@ int HandlerIgnoreMenu(Menu hMenu, MenuAction hAction, int iClient, int iItem)
 
         case MenuAction_Select:
         {
-            char sTarget[4]; GetMenuItem(hMenu, iItem, sTarget, sizeof(sTarget));
+            char szTarget[4]; GetMenuItem(hMenu, iItem, szTarget, sizeof(szTarget));
 
-            int iTarget = StringToInt(sTarget);
+            int iTarget = StringToInt(szTarget);
 
             if (!IsValidClient(iTarget) || !IsClientInGame(iTarget))
             {
@@ -250,14 +250,14 @@ int HandlerIgnoreMenu(Menu hMenu, MenuAction hAction, int iClient, int iItem)
 /*
  * Returns the player that was found by the request.
  */
-int FindOneTarget(int iClient, const char[] sTarget)
+int FindOneTarget(int iClient, const char[] szTarget)
 {
     char iTargetName[MAX_TARGET_LENGTH];
     int iTargetList[1];
     bool isMl = false;
 
     bool bFound = ProcessTargetString(
-        sTarget,
+        szTarget,
         iClient,
         iTargetList,
         1,
@@ -270,14 +270,14 @@ int FindOneTarget(int iClient, const char[] sTarget)
     return bFound ? iTargetList[0] : -1;
 }
 
-void GetClientNameFixed(int iClient, char[] name, int length, int iMaxSize)
+void GetClientNameFixed(int iClient, char[] szName, int iLength, int iMaxSize)
 {
-    GetClientName(iClient, name, length);
+    GetClientName(iClient, szName, iLength);
 
-    if (strlen(name) > iMaxSize)
+    if (strlen(szName) > iMaxSize)
     {
-        name[iMaxSize - 3] = name[iMaxSize - 2] = name[iMaxSize - 1] = '.';
-        name[iMaxSize] = '\0';
+        szName[iMaxSize - 3] = szName[iMaxSize - 2] = szName[iMaxSize - 1] = '.';
+        szName[iMaxSize] = '\0';
     }
 }
 

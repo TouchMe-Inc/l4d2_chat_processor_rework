@@ -3,9 +3,10 @@
 #endif
 #define _chat_processor_rework_included
 
-#define MAXLENGTH_INPUT			    128 	// Inclues \0 and is the size of the chat input box.
-#define MAXLENGTH_NAME			    64		// This is backwords math to get compability.  Sourcemod has it set at 32, but there is room for more.
-#define MAXLENGTH_MESSAGE		    256		// This is based upon the SDK and the length of the entire message, including tags, name, : etc.
+
+#define MAXLENGTH_TAG			    128
+#define MAXLENGTH_NAME			    128
+#define MAXLENGTH_MESSAGE		    256
 
 /*
  * Chat flags.
@@ -28,12 +29,11 @@
  *
  * @param 		iAuthor						The client index of the player who sent the chat message
  * @param 		hRecipients					The handle to the client index adt array of the players who should recieve the chat message
- * @param 		sName						The client's name of the player who sent the chat message (Byref)
- * @param 		sMessage					The contents of the chat message (Byref)
+ * @param 		szName						The client's name of the player who sent the chat message (Byref)
+ * @param 		szMessage					The contents of the chat message (Byref)
  * @noreturn
  */
-forward Action OnChatMessage(int iAuthor, Handle hRecipients, char[] sName, char[] sMessage, int iFlags);
-
+forward Action OnChatMessage(int iAuthor, Handle hRecipients, char[] szTag, char[] szName, char[] szMessage, int iFlags);
 
 /**
  * Called after all OnChatMessage forwards have been fired and the message is being broadcast.
@@ -44,12 +44,11 @@ forward Action OnChatMessage(int iAuthor, Handle hRecipients, char[] sName, char
  *
  * @param 		iAuthor						The client index of the player who sent the chat message
  * @param 		recipients					The handle to the client index adt array of the players who are receiting the chat message
- * @param 		sName						The client's name of the player who sent the chat message (after any replacements)
- * @param 		sMessage					The contents of the chat message (after any replacements)
+ * @param 		szName						The client's name of the player who sent the chat message (after any replacements)
+ * @param 		szMessage					The contents of the chat message (after any replacements)
  * @noreturn
  */
-forward void OnChatMessage_Post(int iAuthor, Handle hRecipients, const char[] sName, const char[] sMessage, int iFlags);
-
+forward void OnChatMessage_Post(int iAuthor, Handle hRecipients, const char[] szTag, const char[] szName, const char[] szMessage, int iFlags);
 
 /**
 Shared plugin information
