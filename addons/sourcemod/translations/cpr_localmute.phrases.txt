@@ -1,0 +1,44 @@
+"Phrases"
+{
+	"TAG"
+	{
+		"en"			"<{green}Local Mute{default}> "
+	}
+
+	"BAD_ARG"
+	{
+		 "#format"		"{1:s}"
+		"en"			"Error: no players found for the request \"{1}\""
+	}
+
+	"MENU_PLAYER_TITLE"
+	{
+		"en"			"Select a player for local mute:"
+	}
+
+	"MENU_IGONORE_TITLE"
+	{
+		"#format"		"{1:s}"
+		"en"			"Local mute for player {1}:"
+	}
+
+	"MENU_CHAT_PROHIBITED"
+	{
+		"en"			"Allow receiving messages"
+	}
+
+	"MENU_CHAT_ALLOWED"
+	{
+		"en"			"Prevent receiving messages"
+	}
+
+	"MENU_VOICE_PROHIBITED"
+	{
+		"en"			"Allow receiving voice messages"
+	}
+
+	"MENU_VOICE_ALLOWED"
+	{
+		"en"			"Prevent receiving voice messages"
+	}
+}

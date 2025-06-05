@@ -1,0 +1,10 @@
+"Config"
+{
+    "SteamID"
+    {
+        "STEAM_1:1:"
+        {
+            "Prefix" "{green}[TAG] {teamcolor}"
+        }
+    }
+}

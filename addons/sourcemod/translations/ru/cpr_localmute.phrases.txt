@@ -1,0 +1,44 @@
+"Phrases"
+{
+	"TAG"
+	{
+		"ru"			"<{green}Local Mute{default}> "
+	}
+
+	"BAD_ARG"
+	{
+		"#format"		"{1:s}"
+		"ru"			"Ошибка: не найден игрок по запросу \"{1}\""
+	}
+
+	"MENU_PLAYER_TITLE"
+	{
+		"ru"			"Выберите игрока для локального мута:"
+	}
+
+	"MENU_IGONORE_TITLE"
+	{
+		"#format"		"{1:s}"
+		"ru"			"Локальный мут для игрока {1}:"
+	}
+
+	"MENU_CHAT_PROHIBITED"
+	{
+		"ru"			"Разрешить отправлять сообщения"
+	}
+
+	"MENU_CHAT_ALLOWED"
+	{
+		"ru"			"Запретить отправлять сообщения"
+	}
+
+	"MENU_VOICE_PROHIBITED"
+	{
+		"ru"			"Разрешить говорить"
+	}
+
+	"MENU_VOICE_ALLOWED"
+	{
+		"ru"			"Запретить говорить"
+	}
+}
