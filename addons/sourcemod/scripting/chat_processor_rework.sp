@@ -7,7 +7,7 @@
 
 public Plugin myinfo = {
     name        = "ChatProcessorRework",
-    author      = "Simple Plugins, Mini, TouchMe",
+    author      = "Mini, TouchMe",
     description = "Process chat and allows other plugins to manipulate chat",
     version     = "build_0003",
     url         = "https://github.com/TouchMe-Inc/l4d2_chat_processor_rework"
@@ -15,11 +15,16 @@ public Plugin myinfo = {
 
 
 /*
+ * File names.
+ */
+#define TRANSLATIONS           "chat_processor_rework.phrases"
+
+/*
  * String size.
  */
-#define MAXLENGTH_INPUT        128 // Inclues \0 and is the size of the chat input box.
-#define MAXLENGTH_NAME         64  // This is backwords math to get compability.  Sourcemod has it set at 32, but there is room for more.
-#define MAXLENGTH_MESSAGE      256 // This is based upon the SDK and the length of the entire message, including tags, name, : etc.
+#define MAXLENGTH_TAG          128
+#define MAXLENGTH_NAME         128
+#define MAXLENGTH_MESSAGE      256
 
 /*
  * Chat flags.
@@ -43,7 +48,6 @@ public Plugin myinfo = {
  */
 #define SENDER_WORLD           0
 #define DEFAULT_HIDDEN_TRIGGER '/'
-#define TRANSLATIONS           "chat_processor_rework.phrases"
 
 
 GlobalForward g_fwdOnChatMessage = null;
@@ -55,20 +59,20 @@ GlobalForward g_fwdOnChatMessagePost = null;
  *
  * @param myself      Handle to the plugin
  * @param bLate       Whether or not the plugin was loaded "late" (after map load)
- * @param sErr        Error message buffer in case load failed
+ * @param szErr       Error message buffer in case load failed
  * @param iErrLen     Maximum number of characters for error message buffer
  * @return            APLRes_Success | APLRes_SilentFailure
  */
-public APLRes AskPluginLoad2(Handle myself, bool bLate, char[] sErr, int iErrLen)
+public APLRes AskPluginLoad2(Handle myself, bool bLate, char[] szErr, int iErrLen)
 {
     if (GetEngineVersion() != Engine_Left4Dead2)
     {
-        strcopy(sErr, iErrLen, "Plugin only supports Left 4 Dead 2");
+        strcopy(szErr, iErrLen, "Plugin only supports Left 4 Dead 2");
         return APLRes_SilentFailure;
     }
 
-    g_fwdOnChatMessage = CreateGlobalForward("OnChatMessage", ET_Hook, Param_Cell, Param_Cell, Param_String, Param_String, Param_Cell);
-    g_fwdOnChatMessagePost = CreateGlobalForward("OnChatMessage_Post", ET_Ignore, Param_Cell, Param_Cell, Param_String, Param_String, Param_Cell);
+    g_fwdOnChatMessage = CreateGlobalForward("OnChatMessage", ET_Hook, Param_Cell, Param_Cell, Param_String,Param_String, Param_String, Param_Cell);
+    g_fwdOnChatMessagePost = CreateGlobalForward("OnChatMessage_Post", ET_Ignore, Param_Cell, Param_Cell, Param_String, Param_String, Param_String, Param_Cell);
 
     RegPluginLibrary("chat_processor_rework");
 
@@ -100,24 +104,25 @@ Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
     /**
      * Get the message.
      */
-    char sMessage[MAXLENGTH_MESSAGE];
-    GetCmdArgString(sMessage, sizeof(sMessage));
-    TrimString(sMessage);
-    StripQuotes(sMessage);
-    CRemoveTags(sMessage, sizeof(sMessage));
+    char szMessage[MAXLENGTH_MESSAGE];
+    GetCmdArgString(szMessage, sizeof(szMessage));
+    StripQuotes(szMessage);
+    CRemoveTags(szMessage, sizeof(szMessage));
+    TrimString(szMessage);
+    
 
-    if (sMessage[0] == DEFAULT_HIDDEN_TRIGGER) {
+    if (szMessage[0] == '\0' || szMessage[0] == DEFAULT_HIDDEN_TRIGGER) {
         return Plugin_Handled;
     }
 
     /*
      * Get the sender name.
      */
-    char sSenderName[MAXLENGTH_NAME];
-    GetClientName(iSender, sSenderName, sizeof(sSenderName));
-    StripQuotes(sSenderName);
-    CRemoveTags(sSenderName, sizeof(sSenderName));
-
+    char szSenderName[MAXLENGTH_NAME];
+    GetClientName(iSender, szSenderName, sizeof(szSenderName));
+    StripQuotes(szSenderName);
+    CRemoveTags(szSenderName, sizeof(szSenderName));
+    
     /*
      * Get the sender team. Wow.
      */
@@ -148,36 +153,39 @@ Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
      */
     Handle hRecipients = iFlags & CHATFLAGS_TEAM ? PrepareRecipients(iTeam) : PrepareRecipients();
 
+    char szTag[MAXLENGTH_TAG];
+    szTag[0] = '\0';
+
     /**
      * Preparing a copy of the data to undo changes.
      */
-    char sOriginalName[MAXLENGTH_NAME];
-    strcopy(sOriginalName, sizeof(sOriginalName), sSenderName);
+    char szOriginalName[MAXLENGTH_NAME];
+    strcopy(szOriginalName, sizeof(szOriginalName), szSenderName);
 
-    char sOriginalMessage[MAXLENGTH_MESSAGE];
-    strcopy(sOriginalMessage, sizeof(sOriginalMessage), sMessage);
+    char szOriginalMessage[MAXLENGTH_MESSAGE];
+    strcopy(szOriginalMessage, sizeof(szOriginalMessage), szMessage);
 
     Handle hOriginalRecipients = CloneArray(hRecipients);
 
     /*
      * Start the forward for other plugins.
      */
-    Action fResult = CallOnChatMessage(iSender, hRecipients, sSenderName, sMessage, iFlags);
+    Action fResult = CallOnChatMessage(iSender, hRecipients, szTag, szSenderName, szMessage, iFlags);
 
     if (fResult == Plugin_Continue)
     {
-        CloseHandle(hRecipients);
+        delete hRecipients;
         hRecipients = CloneArray(hOriginalRecipients);
-        CloseHandle(hOriginalRecipients);
+        delete hOriginalRecipients;
 
-        strcopy(sSenderName, sizeof(sSenderName), sOriginalName);
-        strcopy(sMessage, sizeof(sMessage), sOriginalMessage);
+        strcopy(szSenderName, sizeof(szSenderName), szOriginalName);
+        strcopy(szMessage, sizeof(szMessage), szOriginalMessage);
     }
 
     else if (fResult == Plugin_Stop)
     {
-        CloseHandle(hRecipients);
-        CloseHandle(hOriginalRecipients);
+        delete hRecipients;
+        delete hOriginalRecipients;
         return Plugin_Handled;
     }
 
@@ -193,8 +201,15 @@ Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
     /*
      * This is the check for a name change. If it has not changed we add the team color code.
      */
-    if (StrEqual(sOriginalName, sSenderName)) {
-        Format(sSenderName, sizeof(sSenderName), "\x03%s", sSenderName);
+    if (StrEqual(szOriginalName, szSenderName)) {
+        Format(szSenderName, sizeof(szSenderName), "\x03%s", szSenderName);
+    }
+
+    /*
+     * Adds a tag before the sender's name, if the tag is not empty.
+     */
+    if (szTag[0] != '\0') {
+        Format(szSenderName, sizeof(szSenderName), "%s %s", szTag, szSenderName);
     }
 
     char sChatType[64]; GetChatTemplateByFlags(iFlags, sChatType, sizeof(sChatType));
@@ -203,18 +218,18 @@ Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
     {
         int iPlayer = GetArrayCell(hRecipients, iRecipient);
 
-        CPrintToChatEx(iPlayer, iSender, "%T", sChatType, iPlayer, sSenderName, sMessage);
+        CPrintToChatEx(iPlayer, iSender, "%T", sChatType, iPlayer, szSenderName, szMessage);
     }
 
     /*
      * Start forwarding sent messages for other plugins.
      */
-    CallOnChatMessagePost(iSender, hRecipients, sSenderName, sMessage, iFlags);
+    CallOnChatMessagePost(iSender, hRecipients, szTag, szSenderName, szMessage, iFlags);
 
     /*
-     * Clearing the Handle.
+     * Delete the Handle.
      */
-    CloseHandle(hRecipients);
+    delete hRecipients;
 
     /*
      * Stop the original message.
@@ -237,6 +252,8 @@ void GetChatTemplateByFlags(int iFlags, char[] sChatTemplate, int iLength)
         } else if (iFlags & CHATFLAGS_INFECTED) {
             strcopy(sChatTemplate, iLength, iFlags & CHATFLAGS_DEAD ? "L4D_Chat_Infected_Dead" : "L4D_Chat_Infected");
         } else if (iFlags & CHATFLAGS_SPECTATOR) {
+            strcopy(sChatTemplate, iLength, "L4D_Chat_Spec");
+        } else {
             strcopy(sChatTemplate, iLength, "L4D_Chat_Spec");
         }
     } else if (iFlags & CHATFLAGS_SPECTATOR) {
@@ -312,12 +329,12 @@ int ValidateRecipients(Handle hRecipients)
  *
  * @param iSender           Sender index.
  * @param hRecipients       Handle of recipients array.
- * @param sSenderName       Sender name.
- * @param sMessage          Message.
+ * @param szSenderName      Sender name.
+ * @param szMessage         Message.
  * @param iFlags            Chat flags.
  * @return                  Plugin action.
  */
-Action CallOnChatMessage(int iSender, Handle hRecipients, char[] sSenderName, char[] sMessage, int iFlags)
+Action CallOnChatMessage(int iSender, Handle hRecipients, char[] szTag, char[] szSenderName, char[] szMessage, int iFlags)
 {
     Action fResult = Plugin_Continue;
 
@@ -326,8 +343,9 @@ Action CallOnChatMessage(int iSender, Handle hRecipients, char[] sSenderName, ch
         Call_StartForward(g_fwdOnChatMessage);
         Call_PushCell(iSender);
         Call_PushCell(hRecipients);
-        Call_PushStringEx(sSenderName, MAXLENGTH_NAME, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
-        Call_PushStringEx(sMessage, MAXLENGTH_MESSAGE, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+        Call_PushStringEx(szTag, MAXLENGTH_TAG, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+        Call_PushStringEx(szSenderName, MAXLENGTH_NAME, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+        Call_PushStringEx(szMessage, MAXLENGTH_MESSAGE, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
         Call_PushCell(iFlags);
 
         if (Call_Finish(fResult) != SP_ERROR_NONE) {
@@ -343,19 +361,20 @@ Action CallOnChatMessage(int iSender, Handle hRecipients, char[] sSenderName, ch
  *
  * @param iSender       Sender index.
  * @param hRecipients   Handle of recipients array.
- * @param sSenderName   Sender name.
- * @param sMessage      Message.
+ * @param szSenderName  Sender name.
+ * @param szMessage     Message.
  * @param iFlags        Chat flags.
  */
-void CallOnChatMessagePost(int iSender, Handle hRecipients, char[] sSenderName, char[] sMessage, int iFlags)
+void CallOnChatMessagePost(int iSender, Handle hRecipients, char[] szTag, char[] szSenderName, char[] szMessage, int iFlags)
 {
     if (GetForwardFunctionCount(g_fwdOnChatMessagePost))
     {
         Call_StartForward(g_fwdOnChatMessagePost);
         Call_PushCell(iSender);
         Call_PushCell(hRecipients);
-        Call_PushString(sSenderName);
-        Call_PushString(sMessage);
+        Call_PushString(szTag);
+        Call_PushString(szSenderName);
+        Call_PushString(szMessage);
         Call_PushCell(iFlags);
         Call_Finish();
     }

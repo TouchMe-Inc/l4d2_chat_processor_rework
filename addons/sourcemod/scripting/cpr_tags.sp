@@ -27,7 +27,7 @@ public void OnPluginStart()
     ImportTagsFromFile(g_smTags, PATH_TO_TAGS_FILE);
 }
 
-public Action OnChatMessage(int iAuthor, Handle hRecipients, char[] szName, char[] szMessage, int iFlags)
+public Action OnChatMessage(int iAuthor, Handle hRecipients, char[] szTag, char[] szName, char[] szMessage, int iFlags)
 {
     char szSteamID[32]; 
     GetClientAuthId(iAuthor, AuthId_Steam2, szSteamID, sizeof(szSteamID));
@@ -37,7 +37,7 @@ public Action OnChatMessage(int iAuthor, Handle hRecipients, char[] szName, char
         return Plugin_Continue;
     }
 
-    Format(szName, MAXLENGTH_NAME, "%s%s", szTemplate, szName);
+    Format(szTag, MAXLENGTH_TAG, "%s%s", szTemplate, szTag);
 
     return Plugin_Changed;
 }
@@ -54,12 +54,12 @@ void ImportTagsFromFile(StringMap smTags, const char[] szPath)
     {
         if (kv.GotoFirstSubKey())
         {
+            char steamID[64];
+            char prefix[64];
+
             do
             {
-                char steamID[64];
                 kv.GetSectionName(steamID, sizeof(steamID));
-
-                char prefix[64];
                 kv.GetString("Prefix", prefix, sizeof(prefix));
 
                 smTags.SetString(steamID, prefix);
