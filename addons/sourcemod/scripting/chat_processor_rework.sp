@@ -17,7 +17,7 @@ public Plugin myinfo = {
 /*
  * String size.
  */
-#define MAXLENGTH_INPUT        128 // Inclues \0 and is the size of the chat input box.
+#define MAXLENGTH_TAG          64
 #define MAXLENGTH_NAME         64  // This is backwords math to get compability.  Sourcemod has it set at 32, but there is room for more.
 #define MAXLENGTH_MESSAGE      256 // This is based upon the SDK and the length of the entire message, including tags, name, : etc.
 
@@ -67,25 +67,8 @@ public APLRes AskPluginLoad2(Handle myself, bool bLate, char[] szErr, int iErrLe
         return APLRes_SilentFailure;
     }
 
-    g_fwdOnChatMessage = CreateGlobalForward(
-        "OnChatMessage",
-        ET_Hook,
-        Param_Cell,
-        Param_Cell,
-        Param_String,
-        Param_String,
-        Param_Cell
-    );
-
-    g_fwdOnChatMessagePost = CreateGlobalForward(
-        "OnChatMessage_Post",
-        ET_Ignore,
-        Param_Cell,
-        Param_Cell,
-        Param_String,
-        Param_String,
-        Param_Cell
-    );
+    g_fwdOnChatMessage = CreateGlobalForward("OnChatMessage", ET_Hook, Param_Cell, Param_Cell, Param_String,Param_String, Param_String, Param_Cell);
+    g_fwdOnChatMessagePost = CreateGlobalForward("OnChatMessage_Post", ET_Ignore, Param_Cell, Param_Cell, Param_String, Param_String, Param_String, Param_Cell);
 
     RegPluginLibrary("chat_processor_rework");
 
@@ -104,11 +87,11 @@ public void OnPluginStart()
  * Handler for "say" and "say_team" commands.
  *
  * @param iSender     Sender index.
- * @param szCmd       Command.
+ * @param sCmd        Command.
  * @param iArgs       Number of arguments.
  * @return            Plugin action.
  */
-Action Cmd_Say(int iSender, const char[] szCmd, int iArgs)
+Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
 {
     if (iSender == SENDER_WORLD || !IsClientConnected(iSender)) {
         return Plugin_Continue;
@@ -145,7 +128,7 @@ Action Cmd_Say(int iSender, const char[] szCmd, int iArgs)
      */
     int iFlags = CHATFLAGS_INVALID;
 
-    if (strcmp(szCmd, "say_team") == 0) {
+    if (strcmp(sCmd, "say_team") == 0) {
         iFlags = iFlags | CHATFLAGS_TEAM;
     }
 
@@ -165,6 +148,9 @@ Action Cmd_Say(int iSender, const char[] szCmd, int iArgs)
      */
     Handle hRecipients = iFlags & CHATFLAGS_TEAM ? PrepareRecipients(iTeam) : PrepareRecipients();
 
+    char szTag[MAXLENGTH_TAG];
+    szTag[0] = '\0';
+
     /**
      * Preparing a copy of the data to undo changes.
      */
@@ -179,7 +165,7 @@ Action Cmd_Say(int iSender, const char[] szCmd, int iArgs)
     /*
      * Start the forward for other plugins.
      */
-    Action fResult = CallOnChatMessage(iSender, hRecipients, szSenderName, szMessage, iFlags);
+    Action fResult = CallOnChatMessage(iSender, hRecipients, szTag, szSenderName, szMessage, iFlags);
 
     if (fResult == Plugin_Continue)
     {
@@ -214,19 +200,26 @@ Action Cmd_Say(int iSender, const char[] szCmd, int iArgs)
         Format(szSenderName, sizeof(szSenderName), "\x03%s", szSenderName);
     }
 
-    char szChatType[64]; GetChatTemplateByFlags(iFlags, szChatType, sizeof(szChatType));
+    /*
+     * Adds a tag before the sender's name, if the tag is not empty.
+     */
+    if (szTag[0] != '\0') {
+        Format(szSenderName, sizeof(szSenderName), "%s %s", szTag, szSenderName);
+    }
+
+    char sChatType[64]; GetChatTemplateByFlags(iFlags, sChatType, sizeof(sChatType));
 
     for (int iRecipient = 0; iRecipient < iRecipients; iRecipient ++)
     {
         int iPlayer = GetArrayCell(hRecipients, iRecipient);
 
-        CPrintToChatEx(iPlayer, iSender, "%T", szChatType, iPlayer, szSenderName, szMessage);
+        CPrintToChatEx(iPlayer, iSender, "%T", sChatType, iPlayer, szSenderName, szMessage);
     }
 
     /*
      * Start forwarding sent messages for other plugins.
      */
-    CallOnChatMessagePost(iSender, hRecipients, szSenderName, szMessage, iFlags);
+    CallOnChatMessagePost(iSender, hRecipients, szTag, szSenderName, szMessage, iFlags);
 
     /*
      * Delete the Handle.
@@ -334,7 +327,7 @@ int ValidateRecipients(Handle hRecipients)
  * @param iFlags            Chat flags.
  * @return                  Plugin action.
  */
-Action CallOnChatMessage(int iSender, Handle hRecipients, char[] szSenderName, char[] szMessage, int iFlags)
+Action CallOnChatMessage(int iSender, Handle hRecipients, char[] szTag, char[] szSenderName, char[] szMessage, int iFlags)
 {
     Action fResult = Plugin_Continue;
 
@@ -343,6 +336,7 @@ Action CallOnChatMessage(int iSender, Handle hRecipients, char[] szSenderName, c
         Call_StartForward(g_fwdOnChatMessage);
         Call_PushCell(iSender);
         Call_PushCell(hRecipients);
+        Call_PushStringEx(szTag, MAXLENGTH_TAG, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
         Call_PushStringEx(szSenderName, MAXLENGTH_NAME, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
         Call_PushStringEx(szMessage, MAXLENGTH_MESSAGE, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
         Call_PushCell(iFlags);
@@ -364,13 +358,14 @@ Action CallOnChatMessage(int iSender, Handle hRecipients, char[] szSenderName, c
  * @param szMessage     Message.
  * @param iFlags        Chat flags.
  */
-void CallOnChatMessagePost(int iSender, Handle hRecipients, char[] szSenderName, char[] szMessage, int iFlags)
+void CallOnChatMessagePost(int iSender, Handle hRecipients, char[] szTag, char[] szSenderName, char[] szMessage, int iFlags)
 {
     if (GetForwardFunctionCount(g_fwdOnChatMessagePost))
     {
         Call_StartForward(g_fwdOnChatMessagePost);
         Call_PushCell(iSender);
         Call_PushCell(hRecipients);
+        Call_PushString(szTag);
         Call_PushString(szSenderName);
         Call_PushString(szMessage);
         Call_PushCell(iFlags);
