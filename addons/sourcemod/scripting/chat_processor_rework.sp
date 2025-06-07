@@ -17,7 +17,7 @@ public Plugin myinfo = {
 /*
  * String size.
  */
-#define MAXLENGTH_TAG          64
+#define MAXLENGTH_TAG          128
 #define MAXLENGTH_NAME         128
 #define MAXLENGTH_MESSAGE      256
 
