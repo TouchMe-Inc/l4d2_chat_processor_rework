@@ -1,0 +1,97 @@
+"Phrases"
+{
+    "NONE"
+    {
+        "en"            "None"
+    }
+
+    "COLOR_DEFAULT"
+    {
+        "en"			"White"
+    }
+
+    "COLOR_GOLD"
+    {
+        "en"			"Gold"
+    }
+
+    "COLOR_TEAM"
+    {
+        "en"			"Team"
+    }
+
+    "COLOR_GREEN"
+    {
+        "en"			"Green"
+    }
+
+    "MENU_CHAT_SETTINGS_TITLE"
+    {
+        "en"            "Chat settings:\n "
+    }
+
+    "MENU_CHAT_SETTINGS_DISABLE_ALL"
+    {
+        "en"            "Disable all\n "
+    }
+
+    "MENU_CHAT_SETTINGS_PREFIX"
+    {
+        "en"            "Prefix"
+    }
+
+    "MENU_CHAT_SETTINGS_COLOR_PREFIX"
+    {
+        "en"            "Prefix color"
+    }
+
+    "MENU_CHAT_SETTINGS_COLOR_NAME"
+    {
+        "en"            "Name color"
+    }
+
+    "MENU_CHAT_SETTINGS_COLOR_MESSAGE"
+    {
+        "en"            "Text color"
+    }
+
+    "NO_ACCESS"
+    {
+        "en"            "No access"
+    }
+
+    "MENU_PREFIX_TITLE"
+    {
+        "#format"       "{1:s}"
+        "en"            "Select prefix:\n(Current: {1})\n "
+    }
+
+    "MENU_PREFIX_DISABLE"
+    {
+        "en"            "Disable prefix\n "
+    }
+
+    "MENU_COLOR_PREFIX_TITLE"
+    {
+        "#format"       "{1:s}"
+        "en"            "Set prefix color:\n(Current: {1})\n "
+    }
+
+    "MENU_COLOR_NAME_TITLE"
+    {
+        "#format"       "{1:s}"
+        "en"            "Set name color:\n(Current: {1})\n "
+    }
+
+
+    "MENU_COLOR_MESSAGE_TITLE"
+    {
+        "#format"       "{1:s}"
+        "en"            "Set messave color:\n(Current: {1})\n "
+    }
+
+    "MENU_COLOR_RESET"
+    {
+        "en"            "Reset color\n "
+    }
+}
