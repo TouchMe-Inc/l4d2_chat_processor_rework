@@ -109,7 +109,7 @@ Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
     StripQuotes(szMessage);
     CRemoveTags(szMessage, sizeof(szMessage));
     TrimString(szMessage);
-    
+
 
     if (szMessage[0] == '\0' || szMessage[0] == DEFAULT_HIDDEN_TRIGGER) {
         return Plugin_Handled;
@@ -122,7 +122,7 @@ Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
     GetClientName(iSender, szSenderName, sizeof(szSenderName));
     StripQuotes(szSenderName);
     CRemoveTags(szSenderName, sizeof(szSenderName));
-    
+
     /*
      * Get the sender team. Wow.
      */

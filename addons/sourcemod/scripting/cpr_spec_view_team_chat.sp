@@ -40,6 +40,10 @@ public APLRes AskPluginLoad2(Handle myself, bool bLate, char[] sErr, int iErrLen
 
 public Action OnChatMessage(int iAuthor, Handle hRecipients, char[] szTag, char[] szName, char[] szMessage, int iFlags)
 {
+    if (szMessage[0] == '!') {
+        return Plugin_Continue;
+    }
+    
     if (iFlags & CHATFLAGS_SPECTATOR || ~iFlags & CHATFLAGS_TEAM) {
         return Plugin_Continue;
     }
