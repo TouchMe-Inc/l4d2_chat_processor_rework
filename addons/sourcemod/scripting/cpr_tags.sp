@@ -2,7 +2,6 @@
 #pragma newdecls                required
 
 #include <sourcemod>
-#include <sdktools>
 #include <chat_processor_rework>
 
 
@@ -24,45 +23,70 @@ public void OnPluginStart()
 {
     g_smTags = new StringMap();
 
-    ImportTagsFromFile(g_smTags, PATH_TO_TAGS_FILE);
+    if (!ImportTagsFromFile(g_smTags, PATH_TO_TAGS_FILE)) {
+        SetFailState("Failed to parse keyvalues for %s", PATH_TO_TAGS_FILE);
+    }
+
+    RegAdminCmd("sm_reloadtags", Cmd_ReloadTags, ADMFLAG_CONFIG,
+        "Reload chat tags from the config file");
+}
+
+/**
+ * Reloads tags from the config file.
+ *
+ * Parses the file into a temporary StringMap first, and only swaps it in
+ * if parsing succeeded. This way a broken config cannot wipe the
+ * already-loaded tags.
+ */
+Action Cmd_ReloadTags(int iClient, int iArgs)
+{
+    g_smTags.Clear();
+
+    if (!ImportTagsFromFile(g_smTags, PATH_TO_TAGS_FILE)) {
+        return Plugin_Handled;
+    }
+
+    return Plugin_Handled;
 }
 
 public Action OnChatMessage(int iAuthor, Handle hRecipients, char[] szTag, char[] szName, char[] szMessage, int iFlags)
 {
-    char szSteamID[32]; 
-    GetClientAuthId(iAuthor, AuthId_Steam2, szSteamID, sizeof(szSteamID));
+    static char szSteamID[MAX_AUTHID_LENGTH]; 
+    GetClientAuthId(iAuthor, AuthId_Steam2, szSteamID, sizeof(szSteamID), false);
 
-    char szTemplate[64];
-    if (!g_smTags.GetString(szSteamID, szTemplate, sizeof(szTemplate))) {
+    static char szPrefix[64];
+    if (!g_smTags.GetString(szSteamID, szPrefix, sizeof(szPrefix))) {
         return Plugin_Continue;
     }
 
-    Format(szTag, MAXLENGTH_TAG, "%s%s", szTemplate, szTag);
+    Format(szTag, MAXLENGTH_TAG, "%s%s", szPrefix, szTag);
 
     return Plugin_Changed;
 }
 
-void ImportTagsFromFile(StringMap smTags, const char[] szPath)
+bool ImportTagsFromFile(StringMap smTags, const char[] szPath)
 {
     KeyValues kv = new KeyValues("Config");
 
-    if (!kv.ImportFromFile(szPath)) {
-        SetFailState("Failed to parse keyvalues for %s", szPath);
+    if (!kv.ImportFromFile(szPath))
+    {
+        delete kv;
+        return false;
     }
 
     if (kv.JumpToKey("SteamID"))
     {
         if (kv.GotoFirstSubKey())
         {
-            char steamID[64];
-            char prefix[64];
+            char szSteamID[MAX_AUTHID_LENGTH];
+            char szPrefix[64];
 
             do
             {
-                kv.GetSectionName(steamID, sizeof(steamID));
-                kv.GetString("Prefix", prefix, sizeof(prefix));
+                kv.GetSectionName(szSteamID, sizeof(szSteamID));
+                kv.GetString("Prefix", szPrefix, sizeof(szPrefix));
 
-                smTags.SetString(steamID, prefix);
+                smTags.SetString(szSteamID, szPrefix);
             }
             while (kv.GotoNextKey());
         }
@@ -71,4 +95,5 @@ void ImportTagsFromFile(StringMap smTags, const char[] szPath)
     }
 
     delete kv;
+    return true;
 }

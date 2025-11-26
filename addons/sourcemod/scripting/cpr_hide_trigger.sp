@@ -3,6 +3,7 @@
 
 #include <sourcemod>
 #include <chat_processor_rework>
+#include <colors>
 
 
 public Plugin myinfo = {
@@ -16,7 +17,11 @@ public Plugin myinfo = {
 
 public Action OnChatMessage(int iAuthor, Handle hRecipients, char[] szTag, char[] szName, char[] szMessage, int iFlags)
 {
-    if (szMessage[0] != '!') {
+    static char szClearMessage[MAXLENGTH_MESSAGE];
+    strcopy(szClearMessage, sizeof szClearMessage, szMessage);
+    CRemoveTags(szClearMessage, sizeof szClearMessage);
+
+    if (szClearMessage[0] != '!') {
         return Plugin_Continue;
     }
 

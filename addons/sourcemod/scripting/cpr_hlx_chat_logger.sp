@@ -26,11 +26,7 @@ public void OnChatMessage_Post(int iAuthor, Handle hRecipients, const char[] szT
 
 void LogPlayerEvent(int client, const char[] verb, const char[] event, bool display_location = false, const char[] properties = "")
 {
-    if (!IsValidPlayer(client)) {
-        return;
-    }
-
-    char player_authid[32];
+    char player_authid[MAX_AUTHID_LENGTH];
     if (!GetClientAuthId(client, AuthId_Engine, player_authid, sizeof(player_authid), false))
     {
         strcopy(player_authid, sizeof(player_authid), "UNKNOWN");
@@ -49,8 +45,4 @@ void LogPlayerEvent(int client, const char[] verb, const char[] event, bool disp
     {
         LogToGame("\"%N<%d><%s><%s>\" %s \"%s\"%s", client, GetClientUserId(client), player_authid, szTeamName, verb, event, properties);
     }
-}
-
-bool IsValidPlayer(int client) {
-    return client > 0 && client <= MaxClients && IsClientInGame(client);
 }

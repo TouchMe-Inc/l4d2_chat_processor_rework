@@ -104,7 +104,7 @@ Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
     /**
      * Get the message.
      */
-    char szMessage[MAXLENGTH_MESSAGE];
+    static char szMessage[MAXLENGTH_MESSAGE];
     GetCmdArgString(szMessage, sizeof(szMessage));
     StripQuotes(szMessage);
     CRemoveTags(szMessage, sizeof(szMessage));
@@ -118,7 +118,7 @@ Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
     /*
      * Get the sender name.
      */
-    char szSenderName[MAXLENGTH_NAME];
+    static char szSenderName[MAXLENGTH_NAME];
     GetClientName(iSender, szSenderName, sizeof(szSenderName));
     StripQuotes(szSenderName);
     CRemoveTags(szSenderName, sizeof(szSenderName));
@@ -153,7 +153,7 @@ Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
      */
     Handle hRecipients = iFlags & CHATFLAGS_TEAM ? PrepareRecipients(iTeam) : PrepareRecipients();
 
-    char szTag[MAXLENGTH_TAG];
+    static char szTag[MAXLENGTH_TAG];
     szTag[0] = '\0';
 
     /**
@@ -212,13 +212,13 @@ Action Cmd_Say(int iSender, const char[] sCmd, int iArgs)
         Format(szSenderName, sizeof(szSenderName), "%s %s", szTag, szSenderName);
     }
 
-    char sChatType[64]; GetChatTemplateByFlags(iFlags, sChatType, sizeof(sChatType));
+    static char szChatType[64]; GetChatTemplateByFlags(iFlags, szChatType, sizeof(szChatType));
 
     for (int iRecipient = 0; iRecipient < iRecipients; iRecipient ++)
     {
         int iPlayer = GetArrayCell(hRecipients, iRecipient);
 
-        CPrintToChatEx(iPlayer, iSender, "%T", sChatType, iPlayer, szSenderName, szMessage);
+        CPrintToChatEx(iPlayer, iSender, "%T", szChatType, iPlayer, szSenderName, szMessage);
     }
 
     /*

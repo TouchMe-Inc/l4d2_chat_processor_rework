@@ -31,15 +31,15 @@ int g_hClientLocalMute[MAXPLAYERS + 1][MAXPLAYERS + 1];
  *
  * @param myself      Handle to the plugin
  * @param bLate       Whether or not the plugin was loaded "late" (after map load)
- * @param sErr        Error message buffer in case load failed
+ * @param szErr       Error message buffer in case load failed
  * @param iErrLen     Maximum number of characters for error message buffer
  * @return            APLRes_Success | APLRes_SilentFailure
  */
-public APLRes AskPluginLoad2(Handle myself, bool bLate, char[] sErr, int iErrLen)
+public APLRes AskPluginLoad2(Handle myself, bool bLate, char[] szErr, int iErrLen)
 {
     if (GetEngineVersion() != Engine_Left4Dead2)
     {
-        strcopy(sErr, iErrLen, "Plugin only supports Left 4 Dead 2");
+        strcopy(szErr, iErrLen, "Plugin only supports Left 4 Dead 2");
         return APLRes_SilentFailure;
     }
 
@@ -94,7 +94,7 @@ public Action OnChatMessage(int iAuthor, Handle hRecipients, char[] szTag, char[
 Action Cmd_LocalMute(int iClient, int iArgs)
 {
     if (!iClient) {
-        return Plugin_Handled;
+        return Plugin_Continue;
     }
 
     if (!iArgs)
@@ -138,7 +138,7 @@ void ShowPlayerMenu(int iClient)
         }
 
         IntToString(iPlayer, szTarget, sizeof(szTarget));
-        GetClientNameFixed(iPlayer, szName, sizeof(szName), 25);
+        GetClientName(iPlayer, szName, sizeof(szName));
 
         AddMenuItem(hMenu, szTarget, szName);
     }
@@ -153,7 +153,7 @@ int HandlerPlayerMenu(Menu hMenu, MenuAction hAction, int iClient, int iItem)
 {
     switch(hAction)
     {
-        case MenuAction_End: CloseHandle(hMenu);
+        case MenuAction_End: delete hMenu;
 
         case MenuAction_Select:
         {
@@ -178,7 +178,7 @@ void ShowIgnoreMenu(int iClient, int iTarget)
 
     Menu hMenu = CreateMenu(HandlerIgnoreMenu, MenuAction_Select|MenuAction_End);
 
-    char szName[MAX_NAME_LENGTH]; GetClientNameFixed(iTarget, szName, sizeof(szName), 25);
+    char szName[MAX_NAME_LENGTH]; GetClientName(iTarget, szName, sizeof(szName));
 
     SetMenuTitle(hMenu, "%T", "MENU_IGONORE_TITLE", iClient, szName);
 
@@ -195,7 +195,7 @@ int HandlerIgnoreMenu(Menu hMenu, MenuAction hAction, int iClient, int iItem)
 {
     switch(hAction)
     {
-        case MenuAction_End: CloseHandle(hMenu);
+        case MenuAction_End: delete hMenu;
 
         case MenuAction_Select:
         {
@@ -270,22 +270,11 @@ int FindOneTarget(int iClient, const char[] szTarget)
     return bFound ? iTargetList[0] : -1;
 }
 
-void GetClientNameFixed(int iClient, char[] szName, int iLength, int iMaxSize)
+bool AddMenuItemFormat(Handle hMenu, const char[] szKey, const char[] szText, any ...)
 {
-    GetClientName(iClient, szName, iLength);
-
-    if (strlen(szName) > iMaxSize)
-    {
-        szName[iMaxSize - 3] = szName[iMaxSize - 2] = szName[iMaxSize - 1] = '.';
-        szName[iMaxSize] = '\0';
-    }
-}
-
-bool AddMenuItemFormat(Handle hMenu, const char[] sKey, const char[] sText, any ...)
-{
-    char sFormatText[128];
-    VFormat(sFormatText, sizeof(sFormatText), sText, 4);
-    return AddMenuItem(hMenu, sKey, sFormatText);
+    static char szFormatText[128];
+    VFormat(szFormatText, sizeof(szFormatText), szText, 4);
+    return AddMenuItem(hMenu, szKey, szFormatText);
 }
 
 /**
